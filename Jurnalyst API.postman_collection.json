@@ -1,0 +1,292 @@
+{
+  "info": {
+    "_postman_id": "63486c74-adc4-4ac4-82bf-5aba480a1c4c",
+    "name": "Jurnalyst API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "47582545",
+    "_collection_link": "https://go.postman.co/collection/47582545-63486c74-adc4-4ac4-82bf-5aba480a1c4c?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"email\": \"bhagasgz@gmail.com\",\r\n  \"password\": \"SASTRA\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:3000/api/auth/login",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "3000",
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Account",
+      "request": {
+        "method": "GET",
+        "header": []
+      },
+      "response": []
+    },
+    {
+      "name": "Get Categories",
+      "request": {
+        "method": "GET",
+        "header": []
+      },
+      "response": []
+    },
+    {
+      "name": "Get Transactions",
+      "request": {
+        "method": "GET",
+        "header": []
+      },
+      "response": []
+    },
+    {
+      "name": "Get Assets",
+      "request": {
+        "method": "GET",
+        "header": []
+      },
+      "response": []
+    },
+    {
+      "name": "Get Portfolio",
+      "request": {
+        "method": "GET",
+        "header": []
+      },
+      "response": []
+    },
+    {
+      "name": "Get Journal",
+      "request": {
+        "method": "GET",
+        "header": []
+      },
+      "response": []
+    },
+    {
+      "name": "Get Price (BTC)",
+      "request": {
+        "method": "GET",
+        "header": []
+      },
+      "response": []
+    },
+    {
+      "name": "Add Category",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Beater {{token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"name\": \"Hiburan\",\r\n  \"type\": \"expense\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/categories",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "categories"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Add Account",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"name\": \"Mandiri\",\r\n  \"type\": \"bank\",\r\n  \"balance\": 0\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/accounts",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "accounts"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Add Transaction",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"account_id\": \"9a4b3efd-a9ac-4781-ad81-51be18148651\",\r\n  \"category_id\": \"444379f5-7532-4276-84d7-75782337028d\",\r\n  \"amount\": 25000,\r\n  \"type\": \"expense\",\r\n  \"note\": \"Test dari Postman\",\r\n  \"transaction_date\": \"2026-07-29\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/transactions",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "transactions"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Add Asset",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"symbol\": \"ethereum\",\r\n  \"name\": \"Ethereum\",\r\n  \"asset_type\": \"crypto\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/assets",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "assets"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Update Transaction",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"note\": \"Sudah diedit dari Postman\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{base_url}}/api/transactions/6b3c6d54-5cfd-43ae-906d-931285dbb45b",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "transactions",
+            "6b3c6d54-5cfd-43ae-906d-931285dbb45b"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Delete Transaction",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"note\": \"Sudah diedit dari Postman\"\r\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/transactions/6b3c6d54-5cfd-43ae-906d-931285dbb45b",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "transactions",
+            "6b3c6d54-5cfd-43ae-906d-931285dbb45b"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
