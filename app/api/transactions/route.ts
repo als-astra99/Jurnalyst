@@ -25,6 +25,20 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json()
 
+  // Validasi: pastikan type transaksi cocok dengan type kategori
+  const { data: category } = await supabase
+    .from('categories')
+    .select('type')
+    .eq('id', body.category_id)
+    .single()
+
+  if (category && category.type !== body.type) {
+    return NextResponse.json(
+      { error: `Kategori ini bertipe '${category.type}', tapi transaksi dikirim sebagai '${body.type}'` },
+      { status: 400 }
+    )
+  }
+
   const { data, error } = await supabase.from('transactions').insert({
     user_id: user.id,
     account_id: body.account_id,
