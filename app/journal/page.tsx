@@ -33,7 +33,7 @@ type JournalEntry = {
   reflection: string | null
   entry_date: string
   holding_id: string | null
-  portfolio_holdings: { assets: { name: string; symbol: symbol } | null } | null
+  portfolio_holdings: { assets: { name: string; symbol: string } | null } | null
 }
 
 export default function JournalPage() {
