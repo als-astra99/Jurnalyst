@@ -1,15 +1,20 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { Warning, CheckCircle } from '@phosphor-icons/react'
+
+import JurnalystLogo from '@/components/JurnalystLogo'
 
 export default function RegisterPage() {
+  const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [fullName, setFullName] = useState('')
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
+  const router = useRouter()
   const supabase = createClient()
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -17,7 +22,7 @@ export default function RegisterPage() {
     setLoading(true)
     setError('')
 
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -25,13 +30,12 @@ export default function RegisterPage() {
       },
     })
 
-    if (error) {
-      setError(error.message)
+    if (signUpError) {
+      setError(signUpError.message)
       setLoading(false)
       return
     }
 
-    // Buat entry di tabel profiles
     if (data.user) {
       await supabase.from('profiles').insert({
         id: data.user.id,
@@ -39,99 +43,123 @@ export default function RegisterPage() {
       })
     }
 
-    setSuccess(true)
-    setLoading(false)
-  }
-
-  if (success) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <div className="w-full max-w-md rounded-lg bg-white p-8 text-center shadow-md">
-          <h1 className="mb-2 text-xl font-bold text-gray-900">
-            Pendaftaran Berhasil!
-          </h1>
-          <p className="text-gray-600">
-            Cek email Anda untuk verifikasi, lalu{' '}
-            <a href="/login" className="text-blue-600 hover:underline">
-              masuk di sini
-            </a>
-            .
-          </p>
-        </div>
-      </div>
-    )
+    router.push('/dashboard')
+    router.refresh()
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-md">
-        <h1 className="mb-6 text-2xl font-bold text-gray-900">
-          Daftar Jurnalyst
-        </h1>
-
-        <form onSubmit={handleRegister} className="space-y-4">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              Nama Lengkap
-            </label>
-            <input
-              type="text"
-              required
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Nama Anda"
-            />
+    <div className="min-h-screen flex flex-col md:flex-row bg-[#F6F7F5]">
+      {/* BRAND HERO SECTION */}
+      <div className="md:w-1/2 bg-[#1B2A4A] text-[#F6F7F5] p-8 md:p-16 flex flex-col justify-between border-b md:border-b-0 md:border-r border-slate-800">
+        <div>
+          <div className="mb-12">
+            <JurnalystLogo size="xl" lightText={true} />
           </div>
 
+          <div className="max-w-md space-y-4">
+            <h1 className="font-serif-heading text-3xl md:text-4xl font-bold leading-tight text-white">
+              Mulai Kedisiplinan Finansial Anda.
+            </h1>
+            <p className="text-slate-300 text-xs md:text-sm leading-relaxed">
+              Buat akun Jurnalyst untuk mengelola arus kas dompet, memantau posisi investasi, dan mencatat jurnal evaluasi trading.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-12 pt-8 border-t border-slate-800 space-y-3">
+          <div className="flex items-center gap-2.5 text-xs text-slate-300">
+            <CheckCircle size={16} className="text-emerald-400 shrink-0" />
+            <span>Pencatatan arus kas harian terstruktur per kategori.</span>
+          </div>
+          <div className="flex items-center gap-2.5 text-xs text-slate-300">
+            <CheckCircle size={16} className="text-emerald-400 shrink-0" />
+            <span>Pemantauan harga saham IDX & Kripto secara otomatis.</span>
+          </div>
+          <div className="flex items-center gap-2.5 text-xs text-slate-300">
+            <CheckCircle size={16} className="text-emerald-400 shrink-0" />
+            <span>Jurnal hipotesis & evaluasi win-rate trading.</span>
+          </div>
+        </div>
+      </div>
+
+      {/* FORM SECTION */}
+      <div className="md:w-1/2 p-6 md:p-16 flex items-center justify-center">
+        <div className="w-full max-w-md space-y-6 bg-white p-8 md:p-10 rounded-xl shadow-xs border border-slate-200">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              Email
-            </label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="nama@email.com"
-            />
+            <h2 className="font-serif-heading text-xl font-bold text-slate-900">
+              Buat Akun Baru
+            </h2>
+            <p className="text-slate-500 text-xs mt-1">
+              Lengkapi data di bawah ini untuk pendaftaran akun Jurnalyst.
+            </p>
           </div>
 
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              Password
-            </label>
-            <input
-              type="password"
-              required
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Minimal 6 karakter"
-            />
+          <form onSubmit={handleRegister} className="space-y-4">
+            <div>
+              <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-700 mb-1">
+                Nama Lengkap
+              </label>
+              <input
+                type="text"
+                required
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#1B2A4A]"
+                placeholder="Nama Anda"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-700 mb-1">
+                Email
+              </label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#1B2A4A]"
+                placeholder="nama@email.com"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-700 mb-1">
+                Password
+              </label>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#1B2A4A]"
+                placeholder="••••••••"
+              />
+            </div>
+
+            {error && (
+              <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-xs text-[#D14343] font-medium flex items-center gap-2">
+                <Warning size={16} className="shrink-0 text-red-600" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-lg bg-[#1B2A4A] hover:bg-slate-900 text-white font-semibold py-2.5 text-xs shadow-xs transition-all disabled:opacity-50"
+            >
+              {loading ? 'Membuat Akun...' : 'Daftar Sekarang'}
+            </button>
+          </form>
+
+          <div className="pt-4 border-t border-slate-100 text-center text-xs text-slate-600">
+            Sudah memiliki akun?{' '}
+            <Link href="/login" className="text-[#B8802E] font-semibold hover:underline">
+              Masuk di sini
+            </Link>
           </div>
-
-          {error && (
-            <p className="text-sm text-red-600">{error}</p>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-md bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-          >
-            {loading ? 'Memproses...' : 'Daftar'}
-          </button>
-        </form>
-
-        <p className="mt-4 text-center text-sm text-gray-600">
-          Sudah punya akun?{' '}
-          <a href="/login" className="text-blue-600 hover:underline">
-            Masuk di sini
-          </a>
-        </p>
+        </div>
       </div>
     </div>
   )

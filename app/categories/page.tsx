@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import AppNavbar from '@/components/AppNavbar'
+import { Tag, Plus, Trash, ArrowUpRight, ArrowDownRight } from '@phosphor-icons/react'
 
 type Category = {
   id: string
@@ -52,73 +54,128 @@ export default function CategoriesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="mx-auto max-w-2xl">
-        <a href="/dashboard" className="mb-4 inline-block text-sm text-blue-600 hover:underline">
-          ← Kembali ke Dashboard
-        </a>
-        <h1 className="mb-6 text-2xl font-bold text-gray-900">Kategori</h1>
+    <AppNavbar>
+      <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-6">
+        <div>
+          <h1 className="font-serif-heading text-2xl md:text-3xl font-bold text-slate-900">
+            Kelola Kategori Transaksi
+          </h1>
+          <p className="text-sm text-slate-500 mt-1">
+            Pengelompokan pengeluaran (Makan, Transport, dll) dan pemasukan (Gaji, Bonus, Dividen).
+          </p>
+        </div>
 
-        <form onSubmit={handleAdd} className="mb-8 rounded-lg bg-white p-6 shadow">
-          <div className="mb-4 grid grid-cols-2 gap-4">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Nama</label>
-              <input
-                type="text"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Contoh: Makan, Gaji"
-                className="w-full rounded-md border border-gray-300 px-3 py-2"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Jenis</label>
-              <select
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-                className="w-full rounded-md border border-gray-300 px-3 py-2"
-              >
-                <option value="expense">Pengeluaran</option>
-                <option value="income">Pemasukan</option>
-              </select>
-            </div>
-          </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="rounded-md bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
-          >
-            {loading ? 'Menyimpan...' : 'Tambah Kategori'}
-          </button>
-        </form>
+        {/* ADD CATEGORY FORM */}
+        <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-xs">
+          <h2 className="font-serif-heading text-base font-bold text-slate-900 mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
+            <Plus size={18} className="text-[#1B2A4A]" />
+            <span>Tambah Kategori Baru</span>
+          </h2>
 
-        <div className="rounded-lg bg-white shadow">
-          {categories.length === 0 ? (
-            <p className="p-6 text-gray-500">Belum ada kategori ditambahkan.</p>
-          ) : (
-            categories.map((cat) => (
-              <div
-                key={cat.id}
-                className="flex items-center justify-between border-b p-4 last:border-b-0"
-              >
-                <div>
-                  <p className="font-medium text-gray-900">{cat.name}</p>
-                  <p className="text-sm text-gray-500">
-                    {cat.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}
-                  </p>
-                </div>
-                <button
-                  onClick={() => handleDelete(cat.id)}
-                  className="text-sm text-red-600 hover:underline"
-                >
-                  Hapus
-                </button>
+          <form onSubmit={handleAdd} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
+                  Nama Kategori
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Contoh: Makan & Minum, Gaji, Transportasi"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:ring-2 focus:ring-[#1B2A4A] focus:outline-none"
+                />
               </div>
-            ))
+
+              <div>
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
+                  Jenis Kategori
+                </label>
+                <select
+                  value={type}
+                  onChange={(e) => setType(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:ring-2 focus:ring-[#1B2A4A] focus:outline-none"
+                >
+                  <option value="expense">Pengeluaran (-)</option>
+                  <option value="income">Pemasukan (+)</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-4 py-2 rounded-lg bg-[#1B2A4A] hover:bg-slate-900 text-white font-semibold text-xs shadow-xs transition-all disabled:opacity-50"
+              >
+                {loading ? 'Menyimpan...' : 'Tambah Kategori'}
+              </button>
+            </div>
+          </form>
+        </div>
+
+        {/* CATEGORIES LIST */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+          <div className="border-b border-slate-100 p-4 bg-slate-50/60 flex items-center justify-between">
+            <h2 className="font-serif-heading font-bold text-slate-900 text-sm">
+              Daftar Kategori Terdaftar
+            </h2>
+            <span className="text-xs text-slate-500 font-medium">{categories.length} Kategori</span>
+          </div>
+
+          {categories.length === 0 ? (
+            <div className="p-12 text-center flex flex-col items-center justify-center">
+              <Tag size={36} className="text-slate-400 mb-2" />
+              <p className="font-serif-heading text-base font-bold text-slate-800">
+                Belum ada kategori ditambahkan
+              </p>
+              <p className="text-xs text-slate-500 max-w-sm mt-1">
+                Tambahkan kategori pengeluaran dan pemasukan untuk merapikan analisis arus kas.
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-100">
+              {categories.map((cat) => (
+                <div
+                  key={cat.id}
+                  className="flex items-center justify-between p-4 hover:bg-slate-50/40 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                        cat.type === 'income' ? 'bg-emerald-100 text-[#2F9E6E]' : 'bg-red-100 text-[#D14343]'
+                      }`}
+                    >
+                      {cat.type === 'income' ? <ArrowUpRight size={16} weight="bold" /> : <ArrowDownRight size={16} weight="bold" />}
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-900 text-xs">{cat.name}</p>
+                      <span
+                        className={`inline-block px-2 py-0.5 rounded text-[10px] font-semibold uppercase border mt-0.5 ${
+                          cat.type === 'income'
+                            ? 'bg-emerald-50 text-[#2F9E6E] border-emerald-200'
+                            : 'bg-red-50 text-[#D14343] border-red-200'
+                        }`}
+                      >
+                        {cat.type === 'income' ? 'Pemasukan' : 'Pengeluaran'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => handleDelete(cat.id)}
+                    className="p-1 text-slate-400 hover:text-red-500 transition-colors"
+                    title="Hapus Kategori"
+                  >
+                    <Trash size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </div>
-    </div>
+    </AppNavbar>
   )
 }
