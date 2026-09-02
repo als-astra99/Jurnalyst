@@ -22,6 +22,7 @@ export default function AssetsPage() {
   const [assetType, setAssetType] = useState('stock')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [deleting, setDeleting] = useState<string | null>(null)
   const supabase = createClient()
 
   const loadAssets = async () => {
@@ -68,9 +69,61 @@ export default function AssetsPage() {
     loadAssets()
   }
 
-  const handleDelete = async (id: string) => {
-    await supabase.from('assets').delete().eq('id', id)
-    loadAssets()
+  const handleDelete = async (id: string, assetName: string) => {
+    // Ambil semua holdings yang terkait aset ini
+    const { data: holdings } = await supabase
+      .from('portfolio_holdings')
+      .select('id')
+      .eq('asset_id', id)
+
+    const holdingIds = (holdings ?? []).map((h: { id: string }) => h.id)
+
+    // Bangun pesan konfirmasi
+    let confirmMsg = `Hapus aset "${assetName}"?`
+    if (holdingIds.length > 0) {
+      confirmMsg =
+        `Hapus aset "${assetName}"?\n\n` +
+        `⚠️ Aset ini terhubung dengan ${holdingIds.length} riwayat posisi Portfolio dan semua Jurnal terkait.\n\n` +
+        `Semua data berikut akan ikut terhapus:\n` +
+        `• ${holdingIds.length} posisi Portfolio\n` +
+        `• Semua entri Journal yang terhubung posisi tersebut\n\n` +
+        `Tindakan ini tidak bisa dibatalkan.`
+    }
+
+    if (!window.confirm(confirmMsg)) return
+
+    setDeleting(id)
+
+    try {
+      // 1. Hapus journal_entries yang punya holding_id dalam list
+      if (holdingIds.length > 0) {
+        const { error: jeErr } = await supabase
+          .from('journal_entries')
+          .delete()
+          .in('holding_id', holdingIds)
+        if (jeErr) throw new Error('Gagal hapus jurnal: ' + jeErr.message)
+
+        // 2. Hapus semua holdings
+        const { error: hErr } = await supabase
+          .from('portfolio_holdings')
+          .delete()
+          .eq('asset_id', id)
+        if (hErr) throw new Error('Gagal hapus posisi portfolio: ' + hErr.message)
+      }
+
+      // 3. Hapus aset
+      const { error: aErr } = await supabase
+        .from('assets')
+        .delete()
+        .eq('id', id)
+      if (aErr) throw new Error('Gagal hapus aset: ' + aErr.message)
+
+      loadAssets()
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : 'Terjadi kesalahan saat menghapus.')
+    } finally {
+      setDeleting(null)
+    }
   }
 
   return (
@@ -248,11 +301,15 @@ export default function AssetsPage() {
                       </div>
 
                       <button
-                        onClick={() => handleDelete(a.id)}
-                        className="p-1.5 text-slate-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50"
+                        onClick={() => handleDelete(a.id, a.name)}
+                        disabled={deleting === a.id}
+                        className="p-1.5 text-slate-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50 disabled:opacity-40"
                         title="Hapus Aset"
                       >
-                        <Trash size={14} />
+                        {deleting === a.id
+                          ? <span className="block w-3.5 h-3.5 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+                          : <Trash size={14} />
+                        }
                       </button>
                     </div>
                   </AnimatedContent>

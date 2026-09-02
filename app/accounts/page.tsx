@@ -60,7 +60,23 @@ export default function AccountsPage() {
   }
 
   const handleDelete = async (id: string) => {
-    await supabase.from('accounts').delete().eq('id', id)
+    // Cek apakah dompet masih digunakan oleh transaksi
+    const { data: usedBy } = await supabase
+      .from('transactions')
+      .select('id')
+      .eq('account_id', id)
+      .limit(1)
+
+    if (usedBy && usedBy.length > 0) {
+      alert('Dompet tidak bisa dihapus karena masih memiliki riwayat transaksi.\n\nHapus semua transaksi yang menggunakan dompet ini terlebih dahulu.')
+      return
+    }
+
+    const { error } = await supabase.from('accounts').delete().eq('id', id)
+    if (error) {
+      alert('Gagal menghapus dompet: ' + error.message)
+      return
+    }
     loadAccounts()
   }
 

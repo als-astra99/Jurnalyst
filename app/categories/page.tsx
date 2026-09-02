@@ -52,7 +52,23 @@ export default function CategoriesPage() {
   }
 
   const handleDelete = async (id: string) => {
-    await supabase.from('categories').delete().eq('id', id)
+    // Cek apakah kategori masih digunakan oleh transaksi
+    const { data: usedBy } = await supabase
+      .from('transactions')
+      .select('id')
+      .eq('category_id', id)
+      .limit(1)
+
+    if (usedBy && usedBy.length > 0) {
+      alert('Kategori tidak bisa dihapus karena masih digunakan oleh transaksi.\n\nHapus semua transaksi yang menggunakan kategori ini terlebih dahulu.')
+      return
+    }
+
+    const { error } = await supabase.from('categories').delete().eq('id', id)
+    if (error) {
+      alert('Gagal menghapus kategori: ' + error.message)
+      return
+    }
     loadCategories()
   }
 

@@ -31,6 +31,7 @@ export default function PortfolioPage() {
   const [holdings, setHoldings] = useState<Holding[]>([])
   const [prices, setPrices] = useState<Record<string, number>>({})
   const [loadingPrices, setLoadingPrices] = useState(false)
+  const [loadingData, setLoadingData] = useState(true)
 
   const [assetId, setAssetId] = useState('')
   const [quantity, setQuantity] = useState('')
@@ -41,14 +42,17 @@ export default function PortfolioPage() {
   const supabase = createClient()
 
   const loadData = async () => {
-    const { data: assetData } = await supabase.from('assets').select('id, symbol, name, asset_type')
+    setLoadingData(true)
+    const { data: assetData, error: assetErr } = await supabase.from('assets').select('id, symbol, name, asset_type')
     const { data: holdingData } = await supabase
       .from('portfolio_holdings')
       .select('id, quantity, avg_buy_price, status, assets(id, symbol, name, asset_type)')
       .eq('status', 'open')
 
+    if (assetErr) console.error('loadData assets error:', assetErr.message)
     setAssets(assetData || [])
     setHoldings((holdingData as any) || [])
+    setLoadingData(false)
   }
 
   useEffect(() => { loadData() }, [])
@@ -172,8 +176,9 @@ export default function PortfolioPage() {
                 Total Modal Investasi
               </span>
               <div className="mt-4">
-                <p className="font-serif-heading text-2xl md:text-[1.75rem] font-bold font-number-mono leading-tight" style={{ color: '#1A1F2E' }}>
-                  {formatRupiah(totalInvested)}
+                <p className="text-[11px] font-bold font-number-mono mb-0.5" style={{ color: '#94A3B8' }}>Rp</p>
+                <p className="font-serif-heading text-2xl md:text-[1.75rem] font-bold font-number-mono leading-none" style={{ color: '#1A1F2E' }}>
+                  {totalInvested.toLocaleString('id-ID')}
                 </p>
                 <p className="text-xs mt-1.5" style={{ color: '#94A3B8' }}>{holdings.length} posisi terbuka</p>
               </div>
@@ -186,8 +191,9 @@ export default function PortfolioPage() {
                 Estimasi Nilai Pasar
               </span>
               <div className="mt-4">
-                <p className="font-serif-heading text-2xl md:text-[1.75rem] font-bold text-[#B8802E] font-number-mono leading-tight">
-                  {formatRupiah(totalCurrentValue)}
+                <p className="text-[11px] font-bold font-number-mono mb-0.5" style={{ color: '#B8802E' }}>Rp</p>
+                <p className="font-serif-heading text-2xl md:text-[1.75rem] font-bold text-[#B8802E] font-number-mono leading-none">
+                  {totalCurrentValue.toLocaleString('id-ID')}
                 </p>
                 <p className="text-xs mt-1.5" style={{ color: '#94A3B8' }}>Berdasarkan harga terbaru</p>
               </div>
@@ -200,8 +206,11 @@ export default function PortfolioPage() {
                 Unrealized Profit / Loss
               </span>
               <div className="mt-4">
-                <p className={`font-serif-heading text-2xl md:text-[1.75rem] font-bold font-number-mono leading-tight ${totalPnL >= 0 ? 'text-[#2F9E6E]' : 'text-[#D14343]'}`}>
-                  {totalPnL >= 0 ? '+' : ''}{formatRupiah(totalPnL)}
+                <p className="text-[11px] font-bold font-number-mono mb-0.5" style={{ color: totalPnL >= 0 ? '#2F9E6E' : '#D14343' }}>
+                  {totalPnL >= 0 ? '+Rp' : '−Rp'}
+                </p>
+                <p className={`font-serif-heading text-2xl md:text-[1.75rem] font-bold font-number-mono leading-none ${totalPnL >= 0 ? 'text-[#2F9E6E]' : 'text-[#D14343]'}`}>
+                  {Math.abs(totalPnL).toLocaleString('id-ID')}
                 </p>
                 <p className={`text-xs font-semibold mt-1.5 flex items-center gap-1 ${totalPnL >= 0 ? 'text-[#2F9E6E]' : 'text-[#D14343]'}`}>
                   {totalPnL >= 0 ? <TrendUp size={14} weight="bold" /> : <TrendDown size={14} weight="bold" />}
@@ -226,7 +235,12 @@ export default function PortfolioPage() {
               <span>Tambah Posisi Investasi Baru</span>
             </h2>
 
-          {assets.length === 0 ? (
+          {loadingData ? (
+            <div className="flex items-center gap-3 p-4 rounded-xl" style={{ background: '#F9F6EF' }}>
+              <ArrowClockwise size={16} className="animate-spin shrink-0" style={{ color: '#C9973A' }} />
+              <span className="text-xs font-medium" style={{ color: '#64748B' }}>Memuat daftar aset...</span>
+            </div>
+          ) : assets.length === 0 ? (
             <div className="p-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <Warning size={18} className="shrink-0 text-amber-700" />

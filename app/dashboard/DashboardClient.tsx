@@ -77,9 +77,10 @@ export default function DashboardClient({ userName, totalIncome, totalExpense, b
               </div>
             </div>
             <div className="mt-5">
-              <p className="font-serif-heading text-2xl md:text-[1.75rem] font-bold font-number-mono"
+              <p className="text-[11px] font-bold font-number-mono mb-0.5" style={{ color: '#5A9E7A' }}>Rp</p>
+              <p className="font-serif-heading text-2xl md:text-[1.75rem] font-bold font-number-mono leading-none"
                  style={{ color: '#145C3E' }}>
-                Rp <CountUp to={totalIncome} duration={1.8} separator="." />
+                <CountUp to={totalIncome} duration={1.8} separator="." />
               </p>
               <p className="text-xs mt-1.5" style={{ color: '#5A9E7A' }}>Akumulasi seluruh pemasukan</p>
             </div>
@@ -106,9 +107,10 @@ export default function DashboardClient({ userName, totalIncome, totalExpense, b
               </div>
             </div>
             <div className="mt-5">
-              <p className="font-serif-heading text-2xl md:text-[1.75rem] font-bold font-number-mono"
+              <p className="text-[11px] font-bold font-number-mono mb-0.5" style={{ color: '#C0736C' }}>Rp</p>
+              <p className="font-serif-heading text-2xl md:text-[1.75rem] font-bold font-number-mono leading-none"
                  style={{ color: '#922B21' }}>
-                Rp <CountUp to={totalExpense} duration={1.8} separator="." />
+                <CountUp to={totalExpense} duration={1.8} separator="." />
               </p>
               <p className="text-xs mt-1.5" style={{ color: '#C0736C' }}>Akumulasi seluruh pengeluaran</p>
             </div>
@@ -139,10 +141,13 @@ export default function DashboardClient({ userName, totalIncome, totalExpense, b
               </div>
             </div>
             <div className="mt-5">
-              <p className="font-serif-heading text-2xl md:text-[1.75rem] font-bold font-number-mono"
+              <p className="text-[11px] font-bold font-number-mono mb-0.5"
+                 style={{ color: isPositive ? '#8090A8' : '#C0736C' }}>
+                {!isPositive && '−'} Rp
+              </p>
+              <p className="font-serif-heading text-2xl md:text-[1.75rem] font-bold font-number-mono leading-none"
                  style={{ color: isPositive ? '#0F1E36' : '#922B21' }}>
-                {!isPositive && <span className="text-lg mr-0.5">-</span>}
-                Rp <CountUp to={Math.abs(balance)} duration={2} separator="." />
+                <CountUp to={Math.abs(balance)} duration={2} separator="." />
               </p>
               <p className="text-xs mt-1.5" style={{ color: '#8090A8' }}>Selisih pemasukan & pengeluaran</p>
             </div>
