@@ -71,6 +71,18 @@ export default function JournalPage() {
 
   useEffect(() => { loadData() }, [])
 
+  // Refetch saat kembali ke halaman ini (navigasi dari halaman lain)
+  useEffect(() => {
+    const handleFocus = () => loadData()
+    window.addEventListener('focus', handleFocus)
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') loadData()
+    })
+    return () => {
+      window.removeEventListener('focus', handleFocus)
+    }
+  }, [])
+
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)

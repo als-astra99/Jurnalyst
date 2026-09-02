@@ -57,6 +57,18 @@ export default function PortfolioPage() {
 
   useEffect(() => { loadData() }, [])
 
+  // Refetch saat tab/window kembali aktif (navigasi back dari halaman lain)
+  useEffect(() => {
+    const handleFocus = () => loadData()
+    window.addEventListener('focus', handleFocus)
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') loadData()
+    })
+    return () => {
+      window.removeEventListener('focus', handleFocus)
+    }
+  }, [])
+
   const fetchPrices = async () => {
     setLoadingPrices(true)
     const newPrices: Record<string, number> = {}
