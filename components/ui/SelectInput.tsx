@@ -137,8 +137,8 @@ export default function SelectInput({
 
             <div
               style={{
-                maxHeight: '220px',
-                overflowY: 'auto',
+                maxHeight: options.length <= 6 ? `${options.length * 58 + 8}px` : '320px',
+                overflowY: options.length > 6 ? 'auto' : 'visible',
                 padding: '0.375rem',
               }}
             >
