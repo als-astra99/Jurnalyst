@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import { CaretDown, Check } from '@phosphor-icons/react'
 
@@ -32,32 +33,160 @@ export default function SelectInput({
   className = '',
 }: SelectInputProps) {
   const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, width: 0 })
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  const [mounted, setMounted] = useState(false)
 
   const selected = options.find((o) => o.value === value)
 
+  useEffect(() => { setMounted(true) }, [])
+
+  // Hitung posisi dropdown berdasarkan posisi trigger di viewport
+  const updatePos = useCallback(() => {
+    if (!triggerRef.current) return
+    const rect = triggerRef.current.getBoundingClientRect()
+    const spaceBelow = window.innerHeight - rect.bottom
+    const spaceAbove = rect.top
+    const dropdownHeight = Math.min(options.length * 62 + 16, 320)
+
+    // Buka ke atas kalau space bawah tidak cukup
+    const openUp = spaceBelow < dropdownHeight && spaceAbove > spaceBelow
+
+    setDropdownPos({
+      top: openUp
+        ? rect.top + window.scrollY - dropdownHeight - 6
+        : rect.bottom + window.scrollY + 6,
+      left: rect.left + window.scrollX,
+      width: rect.width,
+    })
+  }, [options.length])
+
+  const handleOpen = () => {
+    if (disabled) return
+    updatePos()
+    setOpen((v) => !v)
+  }
+
   // Close on outside click
   useEffect(() => {
+    if (!open) return
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false)
-      }
+      if (
+        triggerRef.current?.contains(e.target as Node) ||
+        dropdownRef.current?.contains(e.target as Node)
+      ) return
+      setOpen(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
-  }, [])
+  }, [open])
 
-  // Close on Escape
+  // Close on Escape & update pos on scroll/resize
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false)
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false) }
+    const onScroll = () => updatePos()
+    document.addEventListener('keydown', onKey)
+    window.addEventListener('scroll', onScroll, true)
+    window.addEventListener('resize', onScroll)
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      window.removeEventListener('scroll', onScroll, true)
+      window.removeEventListener('resize', onScroll)
     }
-    document.addEventListener('keydown', handler)
-    return () => document.removeEventListener('keydown', handler)
-  }, [])
+  }, [open, updatePos])
+
+  const dropdownContent = (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          ref={dropdownRef}
+          initial={{ opacity: 0, y: -8, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: -6, scale: 0.97 }}
+          transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+          style={{
+            position: 'absolute',
+            top: dropdownPos.top,
+            left: dropdownPos.left,
+            width: dropdownPos.width,
+            zIndex: 99999,
+            background: '#FFFFFF',
+            border: '1.5px solid #E8E4DC',
+            borderRadius: '0.75rem',
+            boxShadow: '0 8px 32px rgba(26,31,46,0.14), 0 2px 8px rgba(26,31,46,0.08)',
+            overflow: 'hidden',
+          }}
+        >
+          {/* Gold accent top line */}
+          <div style={{
+            height: '2px',
+            background: 'linear-gradient(to right, transparent, #C9973A 30%, #E8B455 60%, transparent)',
+            flexShrink: 0,
+          }} />
+
+          <div style={{
+            maxHeight: '320px',
+            overflowY: 'auto',
+            padding: '0.375rem',
+          }}>
+            {options.map((opt, idx) => {
+              const isSelected = opt.value === value
+              return (
+                <motion.button
+                  key={opt.value}
+                  type="button"
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.13, delay: idx * 0.025, ease: 'easeOut' }}
+                  onClick={() => { onChange(opt.value); setOpen(false) }}
+                  className="w-full text-left flex items-center justify-between gap-2 rounded-lg transition-all duration-100"
+                  style={{
+                    padding: '0.5rem 0.625rem',
+                    fontSize: '0.8125rem',
+                    fontWeight: isSelected ? 600 : 400,
+                    color: isSelected ? '#1A1F2E' : '#374151',
+                    background: isSelected
+                      ? 'linear-gradient(135deg, #FEF7EC, #FDF3E0)'
+                      : 'transparent',
+                    border: isSelected
+                      ? '1px solid rgba(201,151,58,0.25)'
+                      : '1px solid transparent',
+                    cursor: 'pointer',
+                    outline: 'none',
+                  }}
+                  onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.background = '#F9F6EF' }}
+                  onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.background = 'transparent' }}
+                >
+                  <div>
+                    <span className="block">{opt.label}</span>
+                    {opt.sublabel && (
+                      <span className="block text-[11px] mt-0.5" style={{ color: '#94A3B8' }}>
+                        {opt.sublabel}
+                      </span>
+                    )}
+                  </div>
+                  {isSelected && (
+                    <Check size={13} weight="bold" style={{ color: '#C9973A', flexShrink: 0 }} />
+                  )}
+                </motion.button>
+              )
+            })}
+
+            {options.length === 0 && (
+              <p className="text-center py-4 text-xs" style={{ color: '#94A3B8' }}>
+                Tidak ada opsi tersedia
+              </p>
+            )}
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
 
   return (
-    <div className={`relative ${className}`} ref={ref}>
+    <div className={`relative ${className}`}>
       {label && (
         <label className="form-label">
           {label}
@@ -65,17 +194,16 @@ export default function SelectInput({
         </label>
       )}
 
-      {/* Trigger button */}
+      {/* Trigger */}
       <button
+        ref={triggerRef}
         type="button"
         disabled={disabled}
-        onClick={() => setOpen((v) => !v)}
+        onClick={handleOpen}
         className="w-full text-left flex items-center justify-between gap-2 transition-all duration-150"
         style={{
           borderRadius: '0.5625rem',
-          border: open
-            ? '1.5px solid #C9973A'
-            : '1px solid #DDD9D1',
+          border: open ? '1.5px solid #C9973A' : '1px solid #DDD9D1',
           padding: '0.5625rem 0.8125rem',
           fontSize: '0.8125rem',
           color: selected ? '#1A1F2E' : '#B0A99E',
@@ -88,137 +216,18 @@ export default function SelectInput({
           outline: 'none',
         }}
       >
-        <span className="truncate">
-          {selected ? selected.label : placeholder}
-        </span>
+        <span className="truncate">{selected ? selected.label : placeholder}</span>
         <motion.span
           animate={{ rotate: open ? 180 : 0 }}
           transition={{ duration: 0.2, ease: 'easeInOut' }}
           style={{ flexShrink: 0 }}
         >
-          <CaretDown
-            size={14}
-            weight="bold"
-            style={{ color: open ? '#C9973A' : '#94A3B8' }}
-          />
+          <CaretDown size={14} weight="bold" style={{ color: open ? '#C9973A' : '#94A3B8' }} />
         </motion.span>
       </button>
 
-      {/* Dropdown panel */}
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: -8, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -6, scale: 0.97 }}
-            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            style={{
-              position: 'absolute',
-              top: 'calc(100% + 6px)',
-              left: 0,
-              right: 0,
-              zIndex: 9999,
-              background: '#FFFFFF',
-              border: '1.5px solid #E8E4DC',
-              borderRadius: '0.75rem',
-              boxShadow:
-                '0 8px 32px rgba(26,31,46,0.12), 0 2px 8px rgba(26,31,46,0.06)',
-              overflow: 'hidden',
-            }}
-          >
-            {/* Top gold accent line */}
-            <div
-              style={{
-                height: '2px',
-                background:
-                  'linear-gradient(to right, transparent, #C9973A 30%, #E8B455 60%, transparent)',
-              }}
-            />
-
-            <div
-              style={{
-                maxHeight: options.length <= 6 ? `${options.length * 58 + 8}px` : '320px',
-                overflowY: options.length > 6 ? 'auto' : 'visible',
-                padding: '0.375rem',
-              }}
-            >
-              {options.map((opt, idx) => {
-                const isSelected = opt.value === value
-                return (
-                  <motion.button
-                    key={opt.value}
-                    type="button"
-                    initial={{ opacity: 0, x: -8 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{
-                      duration: 0.15,
-                      delay: idx * 0.03,
-                      ease: 'easeOut',
-                    }}
-                    onClick={() => {
-                      onChange(opt.value)
-                      setOpen(false)
-                    }}
-                    className="w-full text-left flex items-center justify-between gap-2 rounded-lg transition-all duration-100"
-                    style={{
-                      padding: '0.5rem 0.625rem',
-                      fontSize: '0.8125rem',
-                      fontWeight: isSelected ? 600 : 400,
-                      color: isSelected ? '#1A1F2E' : '#374151',
-                      background: isSelected
-                        ? 'linear-gradient(135deg, #FEF7EC, #FDF3E0)'
-                        : 'transparent',
-                      border: isSelected
-                        ? '1px solid rgba(201,151,58,0.25)'
-                        : '1px solid transparent',
-                      cursor: 'pointer',
-                      outline: 'none',
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isSelected) {
-                        e.currentTarget.style.background = '#F9F6EF'
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isSelected) {
-                        e.currentTarget.style.background = 'transparent'
-                      }
-                    }}
-                  >
-                    <div>
-                      <span className="block">{opt.label}</span>
-                      {opt.sublabel && (
-                        <span
-                          className="block text-[11px] mt-0.5"
-                          style={{ color: '#94A3B8' }}
-                        >
-                          {opt.sublabel}
-                        </span>
-                      )}
-                    </div>
-                    {isSelected && (
-                      <Check
-                        size={13}
-                        weight="bold"
-                        style={{ color: '#C9973A', flexShrink: 0 }}
-                      />
-                    )}
-                  </motion.button>
-                )
-              })}
-
-              {options.length === 0 && (
-                <p
-                  className="text-center py-4 text-xs"
-                  style={{ color: '#94A3B8' }}
-                >
-                  Tidak ada opsi tersedia
-                </p>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Render dropdown via Portal — keluar dari semua overflow:hidden parent */}
+      {mounted && createPortal(dropdownContent, document.body)}
     </div>
   )
 }
