@@ -59,10 +59,24 @@ export default async function DashboardPage() {
     .slice(-6)
     .map(([month, val]) => ({ month, ...val }))
 
+  // Prioritas: profiles.full_name → user_metadata.full_name → email prefix
+  const displayName =
+    profile?.full_name ||
+    (user.user_metadata?.full_name as string | undefined) ||
+    user.email?.split('@')[0] ||
+    'Pengguna'
+
+  // Upsert profile kalau full_name masih kosong tapi ada di metadata
+  if (!profile?.full_name && user.user_metadata?.full_name) {
+    await supabase
+      .from('profiles')
+      .upsert({ id: user.id, full_name: user.user_metadata.full_name })
+  }
+
   return (
-    <AppNavbar userEmail={user.email} userName={profile?.full_name}>
+    <AppNavbar userEmail={user.email} userName={displayName}>
       <DashboardClient
-        userName={profile?.full_name || user.email || ''}
+        userName={displayName}
         totalIncome={totalIncome}
         totalExpense={totalExpense}
         balance={balance}

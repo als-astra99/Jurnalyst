@@ -179,7 +179,7 @@ export default function AppNavbar({ userEmail, userName, children }: AppNavbarPr
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-semibold text-white truncate leading-tight">
-                  {userName || 'User Jurnalyst'}
+                  {userName || userEmail?.split('@')[0] || 'Pengguna'}
                 </p>
                 <p className="text-[10px] truncate mt-0.5" style={{ color: 'rgba(148,163,184,0.7)' }}>
                   {userEmail}
@@ -251,7 +251,7 @@ export default function AppNavbar({ userEmail, userName, children }: AppNavbarPr
                   {(userName || userEmail || 'U')[0].toUpperCase()}
                 </div>
                 <div>
-                  <p className="font-semibold text-sm text-white leading-tight">{userName || 'User Jurnalyst'}</p>
+                  <p className="font-semibold text-sm text-white leading-tight">{userName || userEmail?.split('@')[0] || 'Pengguna'}</p>
                   <p className="text-[11px] text-slate-400">{userEmail}</p>
                 </div>
               </div>
