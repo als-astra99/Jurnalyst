@@ -44,7 +44,7 @@ export default function RootLayout({
         ibmPlexMono.variable
       )}
     >
-      <body className="min-h-full flex flex-col bg-[#F6F7F5] text-slate-800 font-sans">
+      <body className="min-h-full flex flex-col bg-[#F5F4F0] text-[#1A1F2E] font-sans">
         {children}
       </body>
     </html>

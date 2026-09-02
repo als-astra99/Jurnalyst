@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import AppNavbar from '@/components/AppNavbar'
+import AnimatedContent from '@/components/reactbits/AnimatedContent'
+import FadeContent from '@/components/reactbits/FadeContent'
+import SelectInput from '@/components/ui/SelectInput'
 import { Coins, Plus, Trash, Info } from '@phosphor-icons/react'
 
 type Asset = {
@@ -73,40 +76,46 @@ export default function AssetsPage() {
   return (
     <AppNavbar>
       <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-6">
-        <div>
-          <h1 className="font-serif-heading text-2xl md:text-3xl font-bold text-slate-900">
-            Daftar Master Aset
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Kelola simbol saham IDX dan ID aset kripto untuk pemantauan harga real-time di portofolio.
-          </p>
-        </div>
+        <AnimatedContent distance={28} duration={0.6} threshold={0.05}>
+          <div>
+            <p className="page-header-eyebrow mb-1.5">Data Master</p>
+            <h1 className="font-serif-heading text-2xl md:text-[1.85rem] font-bold leading-tight" style={{ color: '#1A1F2E' }}>
+              Daftar Master Aset
+            </h1>
+            <p className="text-sm mt-1.5 leading-relaxed" style={{ color: '#64748B' }}>
+              Kelola simbol saham IDX dan ID aset kripto untuk pemantauan harga real-time di portofolio.
+            </p>
+          </div>
+        </AnimatedContent>
 
         {/* ADD ASSET FORM */}
-        <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-xs">
-          <h2 className="font-serif-heading text-base font-bold text-slate-900 mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
-            <Plus size={18} className="text-[#1B2A4A]" />
-            <span>Tambah Aset Baru</span>
-          </h2>
+        <AnimatedContent distance={28} duration={0.65} delay={0.06} threshold={0.05}>
+          <div className="stitched-card p-6 rounded-2xl">
+            <h2 className="font-serif-heading text-sm font-bold mb-4 flex items-center gap-2.5 pb-3"
+                style={{ color: '#1A1F2E', borderBottom: '1px solid #F0EDE5' }}>
+              <div
+                className="w-7 h-7 rounded-lg flex items-center justify-center"
+                style={{ background: 'linear-gradient(135deg, #C8E6D8, #A8D4C0)', color: '#145C3E' }}
+              >
+                <Plus size={14} weight="bold" />
+              </div>
+              <span>Tambah Aset Baru</span>
+            </h2>
 
           <form onSubmit={handleAdd} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
-                  Jenis Aset
-                </label>
-                <select
-                  value={assetType}
-                  onChange={(e) => setAssetType(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:ring-2 focus:ring-[#1B2A4A] focus:outline-none"
-                >
-                  <option value="stock">Saham (IDX / Yahoo Finance)</option>
-                  <option value="crypto">Aset Kripto (CoinGecko)</option>
-                </select>
-              </div>
+              <SelectInput
+                label="Jenis Aset"
+                value={assetType}
+                onChange={setAssetType}
+                options={[
+                  { value: 'stock',  label: 'Saham (IDX / Yahoo Finance)', sublabel: 'Kode ticker .JK' },
+                  { value: 'crypto', label: 'Aset Kripto (CoinGecko)',      sublabel: 'ID dari CoinGecko' },
+                ]}
+              />
 
               <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
+                <label className="form-label">
                   {assetType === 'stock' ? 'Kode Saham (Ticker)' : 'ID Kripto CoinGecko'}
                 </label>
                 <input
@@ -115,39 +124,37 @@ export default function AssetsPage() {
                   value={symbol}
                   onChange={(e) => setSymbol(e.target.value)}
                   placeholder={assetType === 'stock' ? 'BBCA' : 'bitcoin'}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:ring-2 focus:ring-[#1B2A4A] focus:outline-none font-mono"
+                  className="form-input font-mono"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
-                  Nama Aset
-                </label>
+                <label className="form-label">Nama Aset</label>
                 <input
                   type="text"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Bank Central Asia"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:ring-2 focus:ring-[#1B2A4A] focus:outline-none"
+                  className="form-input"
                 />
               </div>
             </div>
 
             {assetType === 'crypto' ? (
-              <p className="text-xs text-slate-600 bg-amber-50 p-2.5 rounded-lg border border-amber-200 flex items-center gap-2">
-                <Info size={16} className="text-amber-700 shrink-0" />
-                <span>Gunakan ID resmi dari CoinGecko (URL), contoh: <code>bitcoin</code>, <code>ethereum</code>, <code>solana</code>.</span>
+              <p className="text-xs bg-amber-50 p-2.5 rounded-lg border border-amber-200 flex items-center gap-2" style={{ color: '#92400E' }}>
+                <Info size={16} className="shrink-0" style={{ color: '#B45309' }} />
+                <span>Gunakan ID resmi dari CoinGecko (URL), contoh: <code className="font-mono">bitcoin</code>, <code className="font-mono">ethereum</code>, <code className="font-mono">solana</code>.</span>
               </p>
             ) : (
-              <p className="text-xs text-slate-600 bg-blue-50 p-2.5 rounded-lg border border-blue-200 flex items-center gap-2">
-                <Info size={16} className="text-blue-700 shrink-0" />
-                <span>Masukkan kode saham 4 huruf (contoh: <code>BBCA</code>, <code>TLKM</code>). Akhiran <code>.JK</code> akan ditambahkan otomatis.</span>
+              <p className="text-xs bg-blue-50 p-2.5 rounded-lg border border-blue-200 flex items-center gap-2" style={{ color: '#1E3A5F' }}>
+                <Info size={16} className="shrink-0" style={{ color: '#1B2A4A' }} />
+                <span>Masukkan kode saham 4 huruf (contoh: <code className="font-mono">BBCA</code>, <code className="font-mono">TLKM</code>). Akhiran <code className="font-mono">.JK</code> akan ditambahkan otomatis.</span>
               </p>
             )}
 
             {error && (
-              <p className="text-xs text-[#D14343] font-medium bg-red-50 p-2.5 rounded-lg border border-red-200">
+              <p className="text-xs text-[#D14343] font-medium bg-red-50 p-2.5 rounded-lg border border-red-200 animate-fade-in">
                 {error}
               </p>
             )}
@@ -156,69 +163,104 @@ export default function AssetsPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="px-4 py-2 rounded-lg bg-[#1B2A4A] hover:bg-slate-900 text-white font-semibold text-xs shadow-xs transition-all disabled:opacity-50"
+                className="btn-primary"
               >
                 {loading ? 'Menyimpan...' : 'Tambah Aset'}
               </button>
             </div>
           </form>
         </div>
+        </AnimatedContent>
 
         {/* ASSETS LIST */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
-          <div className="border-b border-slate-100 p-4 bg-slate-50/60 flex items-center justify-between">
-            <h2 className="font-serif-heading font-bold text-slate-900 text-sm">
-              Daftar Aset Terdaftar
-            </h2>
-            <span className="text-xs text-slate-500 font-medium">{assets.length} Aset</span>
-          </div>
-
-          {assets.length === 0 ? (
-            <div className="p-12 text-center flex flex-col items-center justify-center">
-              <Coins size={36} className="text-slate-400 mb-2" />
-              <p className="font-serif-heading text-base font-bold text-slate-800">
-                Belum ada aset ditambahkan
-              </p>
-              <p className="text-xs text-slate-500 max-w-sm mt-1">
-                Tambahkan saham atau kripto pertama Anda untuk mulai mencatat posisi portofolio.
-              </p>
+        <FadeContent duration={500} delay={150} threshold={0.05}>
+          <div className="rounded-2xl overflow-hidden" style={{ background: '#FFFFFF', border: '1px solid #E8E4DC', boxShadow: '0 1px 4px rgba(26,31,46,0.04)' }}>
+            <div
+              className="p-4 flex items-center justify-between"
+              style={{ background: 'linear-gradient(to right, #FAFAF7, #F5F2EB)', borderBottom: '1px solid #EDE9E0' }}
+            >
+              <h2 className="font-serif-heading font-bold text-sm" style={{ color: '#1A1F2E' }}>
+                Daftar Aset Terdaftar
+              </h2>
+              <span
+                className="text-xs font-medium px-2.5 py-0.5 rounded-full"
+                style={{ background: '#FFFFFF', border: '1px solid #E8E4DC', color: '#64748B' }}
+              >
+                {assets.length} Aset
+              </span>
             </div>
-          ) : (
-            <div className="divide-y divide-slate-100">
-              {assets.map((a) => (
+
+            {assets.length === 0 ? (
+              <div
+                className="p-16 text-center flex flex-col items-center justify-center"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(249,246,240,0.5), rgba(243,239,230,0.6))',
+                  border: '1px dashed #D6D0C4',
+                  margin: '16px',
+                  borderRadius: '1rem',
+                }}
+              >
                 <div
-                  key={a.id}
-                  className="flex items-center justify-between p-4 hover:bg-slate-50/40 transition-colors"
+                  className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
+                  style={{ background: 'linear-gradient(135deg, #F5E4C2, #EDD099)' }}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-[#1B2A4A] text-white flex items-center justify-center font-bold text-xs font-serif-heading shrink-0">
-                      {a.symbol.slice(0, 2).toUpperCase()}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-bold text-slate-900 text-xs">{a.name}</p>
-                        <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-mono font-semibold">
-                          {a.symbol}
-                        </span>
-                      </div>
-                      <span className="inline-block text-[11px] text-slate-500 mt-0.5 capitalize">
-                        {a.asset_type === 'stock' ? 'Saham Indonesia (IDX)' : 'Aset Kripto'}
-                      </span>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => handleDelete(a.id)}
-                    className="p-1 text-slate-400 hover:text-red-500 transition-colors"
-                    title="Hapus Aset"
-                  >
-                    <Trash size={14} />
-                  </button>
+                  <Coins size={28} style={{ color: '#8A5E14' }} />
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+                <p className="font-serif-heading text-sm font-bold" style={{ color: '#1A1F2E' }}>
+                  Belum ada aset ditambahkan
+                </p>
+                <p className="text-[11px] mt-1 max-w-sm leading-relaxed" style={{ color: '#94A3B8' }}>
+                  Tambahkan saham atau kripto pertama Anda untuk mulai mencatat posisi portofolio.
+                </p>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {assets.map((a, idx) => (
+                  <AnimatedContent
+                    key={a.id}
+                    distance={18}
+                    duration={0.4}
+                    delay={idx * 0.03}
+                    threshold={0.01}
+                  >
+                    <div className="flex items-center justify-between p-4 hover:bg-slate-50/40 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs font-serif-heading shrink-0"
+                          style={{ background: 'linear-gradient(135deg, #162848, #0F1E36)', color: '#FFFFFF' }}
+                        >
+                          {a.symbol.slice(0, 2).toUpperCase()}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-bold text-xs" style={{ color: '#1A1F2E' }}>{a.name}</p>
+                            <span
+                              className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold"
+                              style={{ background: 'rgba(100,116,139,0.1)', color: '#475569' }}
+                            >
+                              {a.symbol}
+                            </span>
+                          </div>
+                          <span className="inline-block text-[11px] mt-0.5 capitalize" style={{ color: '#94A3B8' }}>
+                            {a.asset_type === 'stock' ? 'Saham Indonesia (IDX)' : 'Aset Kripto'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => handleDelete(a.id)}
+                        className="p-1.5 text-slate-400 hover:text-red-500 transition-colors rounded-lg hover:bg-red-50"
+                        title="Hapus Aset"
+                      >
+                        <Trash size={14} />
+                      </button>
+                    </div>
+                  </AnimatedContent>
+                ))}
+              </div>
+            )}
+          </div>
+        </FadeContent>
       </div>
     </AppNavbar>
   )

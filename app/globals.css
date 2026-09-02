@@ -6,23 +6,40 @@
   --font-sans: var(--font-sans), system-ui, sans-serif;
   --font-mono: var(--font-mono), monospace;
 
-  --color-ink-navy: #1B2A4A;
-  --color-paper: #F6F7F5;
-  --color-brass: #B8802E;
-  --color-emerald-green: #2F9E6E;
-  --color-brick-red: #D14343;
-  --color-ink-muted: #5B6472;
+  /* ── Design Tokens ─────────────────────────────────────── */
+  --color-ink-navy:      #0F1E36;
+  --color-ink-navy-2:    #162848;
+  --color-paper:         #F5F4F0;
+  --color-paper-warm:    #EFEDE7;
+  --color-gold:          #C9973A;
+  --color-gold-light:    #E8B455;
+  --color-emerald:       #1A7A54;
+  --color-emerald-light: #22A06B;
+  --color-crimson:       #C0392B;
+  --color-crimson-light: #E55347;
+  --color-ink-muted:     #64748B;
+  --color-surface:       #FFFFFF;
+  --color-border:        #E8E4DC;
+  --color-border-warm:   #D6D0C4;
 }
 
 @layer base {
   body {
-    background-color: #F6F7F5;
-    color: #1E293B;
+    background-color: var(--color-paper);
+    color: #1A1F2E;
     font-family: var(--font-sans), system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  *:focus-visible {
+    outline: 2px solid #C9973A;
+    outline-offset: 2px;
+    border-radius: 6px;
   }
 }
 
-/* Custom Journal/Ledger Design Utilities */
+/* ─── Typography ─────────────────────────────────────────── */
 .font-serif-heading {
   font-family: var(--font-serif), Georgia, serif;
 }
@@ -32,48 +49,396 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Stitched Ledger signature border decoration */
+/* ─── Card System ────────────────────────────────────────── */
+
 .stitched-card {
   position: relative;
-  background-color: #ffffff;
-  border-radius: 0.75rem;
-  border: 1px solid #E2E8F0;
-  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
+  background-color: #FFFFFF;
+  border-radius: 1rem;
+  border: 1px solid #E8E4DC;
+  box-shadow:
+    0 1px 2px 0 rgba(26, 31, 46, 0.04),
+    0 2px 8px 0 rgba(26, 31, 46, 0.03);
+  transition: box-shadow 0.25s ease, border-color 0.25s ease, transform 0.2s ease;
 }
 
-.stitched-card-stitch {
-  border: 1px dashed #CBD5E1;
+.stitched-card:hover {
+  box-shadow:
+    0 4px 20px 0 rgba(26, 31, 46, 0.08),
+    0 2px 6px 0 rgba(26, 31, 46, 0.05);
+  border-color: #D6D0C4;
+  transform: translateY(-1px);
 }
 
-/* Left accent stripe signature */
-.stripe-navy {
-  border-left: 4px solid #1B2A4A;
+/* Gradient accent cards */
+.card-income {
+  background: linear-gradient(135deg, #ffffff 60%, #F0FBF5 100%);
+  border-left: 3px solid #1A7A54;
+  border-color: #D4EDE3;
 }
 
-.stripe-green {
-  border-left: 4px solid #2F9E6E;
+.card-expense {
+  background: linear-gradient(135deg, #ffffff 60%, #FEF5F4 100%);
+  border-left: 3px solid #C0392B;
+  border-color: #F0D8D5;
 }
 
-.stripe-red {
-  border-left: 4px solid #D14343;
+.card-balance {
+  background: linear-gradient(135deg, #ffffff 60%, #F0F4FB 100%);
+  border-left: 3px solid #162848;
+  border-color: #D8DEEC;
 }
 
-.stripe-brass {
-  border-left: 4px solid #B8802E;
+.card-balance-negative {
+  background: linear-gradient(135deg, #ffffff 60%, #FEF5F4 100%);
+  border-left: 3px solid #C0392B;
+  border-color: #F0D8D5;
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* Legacy stripe classes (kept for compatibility) */
+.stripe-navy  { border-left: 3px solid #0F1E36; }
+.stripe-green { border-left: 3px solid #1A7A54; }
+.stripe-red   { border-left: 3px solid #C0392B; }
+.stripe-brass { border-left: 3px solid #C9973A; }
+
+/* ─── Button Primitives ───────────────────────────────────── */
+
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.625rem;
+  background: linear-gradient(135deg, #1A2F54 0%, #0F1E36 100%);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.015em;
+  box-shadow:
+    0 1px 3px rgba(15, 30, 54, 0.2),
+    inset 0 1px 0 rgba(255,255,255,0.07);
+  transition: all 0.18s ease;
+  cursor: pointer;
+  border: none;
+  outline: none;
+  text-decoration: none;
 }
-::-webkit-scrollbar-track {
-  background: #F1F5F9;
+.btn-primary:hover {
+  background: linear-gradient(135deg, #1F3660 0%, #12244A 100%);
+  box-shadow:
+    0 4px 14px rgba(15, 30, 54, 0.28),
+    inset 0 1px 0 rgba(255,255,255,0.09);
+  transform: translateY(-1px);
 }
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(15, 30, 54, 0.2);
+}
+.btn-primary:disabled { opacity: 0.5; pointer-events: none; }
+
+.btn-gold {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.625rem;
+  background: linear-gradient(135deg, #E8B455 0%, #C9973A 100%);
+  color: #3D2800;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.015em;
+  box-shadow:
+    0 1px 3px rgba(201, 151, 58, 0.3),
+    inset 0 1px 0 rgba(255,255,255,0.25);
+  transition: all 0.18s ease;
+  cursor: pointer;
+  border: none;
+}
+.btn-gold:hover {
+  background: linear-gradient(135deg, #F0C06A 0%, #D4A240 100%);
+  box-shadow: 0 4px 14px rgba(201, 151, 58, 0.35);
+  transform: translateY(-1px);
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.875rem;
+  border-radius: 0.5rem;
+  background-color: #FFFFFF;
+  color: #475569;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid #E8E4DC;
+  box-shadow: 0 1px 2px rgba(26, 31, 46, 0.04);
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+.btn-ghost:hover {
+  background-color: #F9F8F5;
+  border-color: #D6D0C4;
+  transform: translateY(-1px);
+}
+.btn-ghost:active { transform: translateY(0); }
+
+/* ─── Form Elements ───────────────────────────────────────── */
+
+.form-input {
+  width: 100%;
+  border-radius: 0.5625rem;
+  border: 1px solid #DDD9D1;
+  padding: 0.5625rem 0.8125rem;
+  font-size: 0.8125rem;
+  color: #1A1F2E;
+  background-color: #FDFCFA;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+  outline: none;
+}
+.form-input:focus {
+  border-color: #C9973A;
+  box-shadow: 0 0 0 3px rgba(201, 151, 58, 0.12);
+  background-color: #FFFFFF;
+}
+.form-input::placeholder { color: #B0A99E; }
+
+select.form-input {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23C9973A' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2rem;
+  cursor: pointer;
+}
+select.form-input:focus {
+  border-color: #C9973A;
+  box-shadow: 0 0 0 3px rgba(201,151,58,0.12);
+  background-color: #FFFFFF;
+}
+
+/* ── Date & Month inputs ─────────────────────────────────── */
+
+input[type="date"].form-input,
+input[type="month"].form-input {
+  cursor: pointer;
+  color-scheme: light;
+}
+
+input[type="date"].form-input::-webkit-calendar-picker-indicator,
+input[type="month"].form-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+  filter: invert(55%) sepia(60%) saturate(400%) hue-rotate(5deg) brightness(90%);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  border-radius: 4px;
+  padding: 2px;
+}
+
+input[type="date"].form-input::-webkit-calendar-picker-indicator:hover,
+input[type="month"].form-input::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+input[type="date"].form-input:focus,
+input[type="month"].form-input:focus {
+  border-color: #C9973A;
+  box-shadow: 0 0 0 3px rgba(201,151,58,0.12);
+  background-color: #FFFFFF;
+}
+
+/* standalone date/month (filter bar — tidak pakai .form-input) */
+.date-input-premium {
+  border-radius: 0.5625rem;
+  border: 1px solid #DDD9D1;
+  padding: 0.4375rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #1A1F2E;
+  background-color: #FDFCFA;
+  box-shadow: 0 1px 2px rgba(26,31,46,0.04);
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+  color-scheme: light;
+}
+.date-input-premium:focus {
+  border-color: #C9973A;
+  box-shadow: 0 0 0 3px rgba(201,151,58,0.12);
+  background-color: #FFFFFF;
+}
+.date-input-premium::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.55;
+  filter: invert(55%) sepia(60%) saturate(400%) hue-rotate(5deg) brightness(90%);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  border-radius: 4px;
+  padding: 2px;
+}
+.date-input-premium::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+  transform: scale(1.15);
+}
+
+.form-label {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #64748B;
+  margin-bottom: 0.3125rem;
+}
+
+/* ─── Page Section Headers ────────────────────────────────── */
+
+.page-header-eyebrow {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: #C9973A;
+}
+
+/* ─── Stat Badges ─────────────────────────────────────────── */
+
+.badge-income {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.625rem;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #D9F5E9, #C2EDD9);
+  color: #145C3E;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  border: 1px solid #A8DFC2;
+}
+
+.badge-expense {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.625rem;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #FCE8E6, #F8D5D2);
+  color: #922B21;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  border: 1px solid #F0B8B4;
+}
+
+.badge-neutral {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.625rem;
+  border-radius: 9999px;
+  background: linear-gradient(135deg, #EDE9E0, #E3DDd3);
+  color: #4A4035;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  border: 1px solid #D0C9BA;
+}
+
+/* ─── Sidebar Gradient Background ────────────────────────── */
+
+.sidebar-gradient {
+  background: linear-gradient(180deg,
+    #0F1E36 0%,
+    #132240 35%,
+    #162848 70%,
+    #122038 100%
+  );
+}
+
+/* ─── Gradient Hero / Dark Section ───────────────────────── */
+
+.hero-dark {
+  background: linear-gradient(135deg,
+    #0F1E36 0%,
+    #162848 40%,
+    #1A2F54 70%,
+    #0F1E36 100%
+  );
+}
+
+/* ─── Welcome card gradient ───────────────────────────────── */
+
+.welcome-card {
+  background: linear-gradient(135deg,
+    #FFFFFF 0%,
+    #FDFCFA 50%,
+    #F9F6EF 100%
+  );
+  border: 1px solid #E8E4DC;
+}
+
+/* ─── Gold accent gradient text ───────────────────────────── */
+
+.text-gradient-gold {
+  background: linear-gradient(135deg, #E8B455 0%, #C9973A 60%, #A87C28 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Dividers ────────────────────────────────────────────── */
+
+.divider-warm {
+  height: 1px;
+  background: linear-gradient(to right, transparent, #E8E4DC 20%, #E8E4DC 80%, transparent);
+  border: none;
+  margin: 0;
+}
+
+/* ─── Skeleton ────────────────────────────────────────────── */
+
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position: 600px 0; }
+}
+
+.skeleton {
+  border-radius: 0.5rem;
+  background: linear-gradient(90deg, #EFEDE7 25%, #E6E2D9 50%, #EFEDE7 75%);
+  background-size: 1200px 100%;
+  animation: shimmer 1.8s infinite linear;
+}
+
+/* ─── Entry animations ────────────────────────────────────── */
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-up             { animation: fade-up 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.animate-fade-up-delay-1     { animation-delay: 0.08s; }
+.animate-fade-up-delay-2     { animation-delay: 0.16s; }
+.animate-fade-up-delay-3     { animation-delay: 0.24s; }
+.animate-fade-up-delay-4     { animation-delay: 0.32s; }
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.animate-fade-in { animation: fade-in 0.45s ease both; }
+
+/* ─── Nav active glow ─────────────────────────────────────── */
+
+.nav-active-pill {
+  background: linear-gradient(135deg, #D4A240 0%, #C9973A 100%);
+  box-shadow: 0 2px 8px rgba(201, 151, 58, 0.35), inset 0 1px 0 rgba(255,255,255,0.15);
+}
+
+/* ─── Custom scrollbar ────────────────────────────────────── */
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
-  border-radius: 3px;
+  background: #D6D0C4;
+  border-radius: 10px;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #94A3B8;
-}
+::-webkit-scrollbar-thumb:hover { background: #B8B0A4; }

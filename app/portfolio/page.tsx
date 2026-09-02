@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import AppNavbar from '@/components/AppNavbar'
+import SelectInput from '@/components/ui/SelectInput'
+import AnimatedContent from '@/components/reactbits/AnimatedContent'
+import FadeContent from '@/components/reactbits/FadeContent'
 import {
   ArrowClockwise,
   Coins,
@@ -132,83 +135,96 @@ export default function PortfolioPage() {
       <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-6">
         
         {/* HEADER */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="font-serif-heading text-2xl md:text-3xl font-bold text-slate-900">
-              Portfolio Tracker
-            </h1>
-            <p className="text-sm text-slate-500 mt-1">
-              Pantau aset investasi saham dan kripto secara real-time.
-            </p>
-          </div>
+        <AnimatedContent distance={28} duration={0.6} threshold={0.05}>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <p className="page-header-eyebrow mb-1.5">Investasi</p>
+              <h1 className="font-serif-heading text-2xl md:text-[1.85rem] font-bold leading-tight" style={{ color: '#1A1F2E' }}>
+                Portfolio Tracker
+              </h1>
+              <p className="text-sm mt-1.5 leading-relaxed" style={{ color: '#64748B' }}>
+                Pantau aset investasi saham dan kripto secara real-time.
+              </p>
+            </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={fetchPrices}
-              disabled={loadingPrices}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold shadow-2xs transition-all disabled:opacity-50"
-            >
-              <ArrowClockwise size={16} className={loadingPrices ? 'animate-spin' : ''} />
-              <span>{loadingPrices ? 'Memuat Harga...' : 'Refresh Harga'}</span>
-            </button>
-            <a
-              href="/assets"
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#1B2A4A] text-white hover:bg-slate-900 text-xs font-semibold shadow-2xs transition-all"
-            >
-              <Coins size={16} />
-              <span>Daftar Aset</span>
-            </a>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={fetchPrices}
+                disabled={loadingPrices}
+                className="btn-ghost"
+              >
+                <ArrowClockwise size={16} className={loadingPrices ? 'animate-spin' : ''} />
+                <span>{loadingPrices ? 'Memuat...' : 'Refresh Harga'}</span>
+              </button>
+              <a href="/assets" className="btn-primary">
+                <Coins size={16} />
+                <span>Daftar Aset</span>
+              </a>
+            </div>
           </div>
-        </div>
+        </AnimatedContent>
 
         {/* METRICS CARDS */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <div className="stitched-card stripe-navy p-6 flex flex-col justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Total Modal Investasi
-            </span>
-            <div className="mt-4">
-              <p className="font-serif-heading text-2xl md:text-3xl font-bold text-slate-900 font-number-mono">
-                {formatRupiah(totalInvested)}
-              </p>
-              <p className="text-xs text-slate-400 mt-1">{holdings.length} posisi terbuka</p>
+          <AnimatedContent distance={36} duration={0.65} delay={0.05} threshold={0.05}>
+            <div className="stitched-card stripe-navy p-6 flex flex-col justify-between h-full">
+              <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: '#64748B' }}>
+                Total Modal Investasi
+              </span>
+              <div className="mt-4">
+                <p className="font-serif-heading text-2xl md:text-[1.75rem] font-bold font-number-mono leading-tight" style={{ color: '#1A1F2E' }}>
+                  {formatRupiah(totalInvested)}
+                </p>
+                <p className="text-xs mt-1.5" style={{ color: '#94A3B8' }}>{holdings.length} posisi terbuka</p>
+              </div>
             </div>
-          </div>
+          </AnimatedContent>
 
-          <div className="stitched-card stripe-brass p-6 flex flex-col justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Estimasi Nilai Pasar
-            </span>
-            <div className="mt-4">
-              <p className="font-serif-heading text-2xl md:text-3xl font-bold text-[#B8802E] font-number-mono">
-                {formatRupiah(totalCurrentValue)}
-              </p>
-              <p className="text-xs text-slate-400 mt-1">Berdasarkan harga terbaru</p>
+          <AnimatedContent distance={36} duration={0.65} delay={0.12} threshold={0.05}>
+            <div className="stitched-card stripe-brass p-6 flex flex-col justify-between h-full">
+              <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: '#64748B' }}>
+                Estimasi Nilai Pasar
+              </span>
+              <div className="mt-4">
+                <p className="font-serif-heading text-2xl md:text-[1.75rem] font-bold text-[#B8802E] font-number-mono leading-tight">
+                  {formatRupiah(totalCurrentValue)}
+                </p>
+                <p className="text-xs mt-1.5" style={{ color: '#94A3B8' }}>Berdasarkan harga terbaru</p>
+              </div>
             </div>
-          </div>
+          </AnimatedContent>
 
-          <div className={`stitched-card p-6 flex flex-col justify-between ${totalPnL >= 0 ? 'stripe-green' : 'stripe-red'}`}>
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Unrealized Profit / Loss
-            </span>
-            <div className="mt-4">
-              <p className={`font-serif-heading text-2xl md:text-3xl font-bold font-number-mono ${totalPnL >= 0 ? 'text-[#2F9E6E]' : 'text-[#D14343]'}`}>
-                {totalPnL >= 0 ? '+' : ''}{formatRupiah(totalPnL)}
-              </p>
-              <p className={`text-xs font-semibold mt-1 flex items-center gap-1 ${totalPnL >= 0 ? 'text-[#2F9E6E]' : 'text-[#D14343]'}`}>
-                {totalPnL >= 0 ? <TrendUp size={14} weight="bold" /> : <TrendDown size={14} weight="bold" />}
-                <span>{totalPnLPercent.toFixed(2)}% dari modal</span>
-              </p>
+          <AnimatedContent distance={36} duration={0.65} delay={0.19} threshold={0.05}>
+            <div className={`stitched-card p-6 flex flex-col justify-between h-full ${totalPnL >= 0 ? 'stripe-green' : 'stripe-red'}`}>
+              <span className="text-[11px] font-bold uppercase tracking-wider" style={{ color: '#64748B' }}>
+                Unrealized Profit / Loss
+              </span>
+              <div className="mt-4">
+                <p className={`font-serif-heading text-2xl md:text-[1.75rem] font-bold font-number-mono leading-tight ${totalPnL >= 0 ? 'text-[#2F9E6E]' : 'text-[#D14343]'}`}>
+                  {totalPnL >= 0 ? '+' : ''}{formatRupiah(totalPnL)}
+                </p>
+                <p className={`text-xs font-semibold mt-1.5 flex items-center gap-1 ${totalPnL >= 0 ? 'text-[#2F9E6E]' : 'text-[#D14343]'}`}>
+                  {totalPnL >= 0 ? <TrendUp size={14} weight="bold" /> : <TrendDown size={14} weight="bold" />}
+                  <span>{totalPnLPercent.toFixed(2)}% dari modal</span>
+                </p>
+              </div>
             </div>
-          </div>
+          </AnimatedContent>
         </div>
 
         {/* ADD POSITION FORM */}
-        <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-xs">
-          <h2 className="font-serif-heading text-base font-bold text-slate-900 mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
-            <Plus size={18} className="text-[#1B2A4A]" />
-            <span>Tambah Posisi Investasi Baru</span>
-          </h2>
+        <AnimatedContent distance={28} duration={0.65} delay={0.08} threshold={0.05}>
+          <div className="stitched-card p-6 rounded-2xl">
+            <h2 className="font-serif-heading text-sm font-bold mb-4 flex items-center gap-2.5 pb-3"
+                style={{ color: '#1A1F2E', borderBottom: '1px solid #F0EDE5' }}>
+              <div
+                className="w-7 h-7 rounded-lg flex items-center justify-center"
+                style={{ background: 'linear-gradient(135deg, #C8E6D8, #A8D4C0)', color: '#145C3E' }}
+              >
+                <Plus size={14} weight="bold" />
+              </div>
+              <span>Tambah Posisi Investasi Baru</span>
+            </h2>
 
           {assets.length === 0 ? (
             <div className="p-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between">
@@ -223,29 +239,21 @@ export default function PortfolioPage() {
           ) : (
             <form onSubmit={handleAdd} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
-                    Pilih Aset
-                  </label>
-                  <select
-                    required
-                    value={assetId}
-                    onChange={(e) => setAssetId(e.target.value)}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:ring-2 focus:ring-[#1B2A4A] focus:outline-none"
-                  >
-                    <option value="">Pilih Saham / Kripto</option>
-                    {assets.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.name} ({a.symbol})
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <SelectInput
+                  label="Pilih Aset"
+                  required
+                  value={assetId}
+                  onChange={setAssetId}
+                  placeholder="Pilih Saham / Kripto"
+                  options={assets.map((a) => ({
+                    value: a.id,
+                    label: `${a.name} (${a.symbol})`,
+                    sublabel: a.asset_type === 'stock' ? 'Saham IDX' : 'Aset Kripto',
+                  }))}
+                />
 
                 <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
-                    Jumlah Lot / Unit
-                  </label>
+                  <label className="form-label">Jumlah Lot / Unit</label>
                   <input
                     type="number"
                     step="any"
@@ -253,27 +261,25 @@ export default function PortfolioPage() {
                     value={quantity}
                     onChange={(e) => setQuantity(e.target.value)}
                     placeholder="Contoh: 100"
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 font-number-mono focus:ring-2 focus:ring-[#1B2A4A] focus:outline-none"
+                    className="form-input font-number-mono"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
-                    Harga Beli Rata-rata (Rp)
-                  </label>
+                  <label className="form-label">Harga Beli Rata-rata (Rp)</label>
                   <input
                     type="number"
                     required
                     value={buyPrice}
                     onChange={(e) => setBuyPrice(e.target.value)}
                     placeholder="Contoh: 9250"
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 font-number-mono focus:ring-2 focus:ring-[#1B2A4A] focus:outline-none"
+                    className="form-input font-number-mono"
                   />
                 </div>
               </div>
 
               {error && (
-                <p className="text-xs text-[#D14343] font-medium bg-red-50 p-2.5 rounded-lg border border-red-200">
+                <p className="text-xs text-[#D14343] font-medium bg-red-50 p-2.5 rounded-lg border border-red-200 animate-fade-in">
                   {error}
                 </p>
               )}
@@ -282,7 +288,7 @@ export default function PortfolioPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-4 py-2 rounded-lg bg-[#1B2A4A] hover:bg-slate-900 text-white font-semibold text-xs shadow-xs transition-all disabled:opacity-50"
+                  className="btn-primary"
                 >
                   {loading ? 'Menyimpan...' : 'Simpan Posisi'}
                 </button>
@@ -290,17 +296,25 @@ export default function PortfolioPage() {
             </form>
           )}
         </div>
+        </AnimatedContent>
 
         {/* HOLDINGS LIST */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
-          <div className="border-b border-slate-100 p-4 bg-slate-50/60 flex items-center justify-between">
-            <h2 className="font-serif-heading font-bold text-slate-900 text-sm">
-              Posisi Terbuka
-            </h2>
-            <span className="text-xs font-medium text-slate-500">
-              {holdings.length} Aset
-            </span>
-          </div>
+        <FadeContent duration={500} delay={150} threshold={0.05}>
+          <div className="rounded-2xl overflow-hidden" style={{ background: '#FFFFFF', border: '1px solid #E8E4DC', boxShadow: '0 1px 4px rgba(26,31,46,0.04)' }}>
+            <div
+              className="p-4 flex items-center justify-between"
+              style={{ background: 'linear-gradient(to right, #FAFAF7, #F5F2EB)', borderBottom: '1px solid #EDE9E0' }}
+            >
+              <h2 className="font-serif-heading font-bold text-sm" style={{ color: '#1A1F2E' }}>
+                Posisi Terbuka
+              </h2>
+              <span
+                className="text-xs font-medium px-2.5 py-0.5 rounded-full"
+                style={{ background: '#FFFFFF', border: '1px solid #E8E4DC', color: '#64748B' }}
+              >
+                {holdings.length} Aset
+              </span>
+            </div>
 
           {holdings.length === 0 ? (
             <div className="p-12 text-center flex flex-col items-center justify-center">
@@ -383,6 +397,7 @@ export default function PortfolioPage() {
             </div>
           )}
         </div>
+        </FadeContent>
 
       </div>
     </AppNavbar>

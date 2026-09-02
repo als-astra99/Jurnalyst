@@ -14,6 +14,7 @@ import {
   XCircle,
   Hourglass
 } from '@phosphor-icons/react'
+import SelectInput from '@/components/ui/SelectInput'
 
 type Holding = {
   id: string
@@ -188,118 +189,99 @@ export default function JournalPage() {
 
           <form onSubmit={handleAdd} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
-                  Posisi Terkait (Opsional)
-                </label>
-                <select
-                  value={holdingId}
-                  onChange={(e) => setHoldingId(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:ring-2 focus:ring-[#1B2A4A] focus:outline-none"
-                >
-                  <option value="">Tidak ada / Catatan Umum</option>
-                  {holdings.map((h) => (
-                    <option key={h.id} value={h.id}>
-                      {h.assets?.name} ({h.assets?.symbol}) — {h.status === 'open' ? 'Terbuka' : 'Ditutup'}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <SelectInput
+                label="Posisi Terkait (Opsional)"
+                value={holdingId}
+                onChange={setHoldingId}
+                placeholder="Tidak ada / Catatan Umum"
+                options={[
+                  { value: '', label: 'Tidak ada / Catatan Umum' },
+                  ...holdings.map((h) => ({
+                    value: h.id,
+                    label: `${h.assets?.name} (${h.assets?.symbol})`,
+                    sublabel: h.status === 'open' ? 'Terbuka' : 'Ditutup',
+                  })),
+                ]}
+              />
 
-              <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
-                  Jenis Keputusan
-                </label>
-                <select
-                  value={entryType}
-                  onChange={(e) => setEntryType(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:ring-2 focus:ring-[#1B2A4A] focus:outline-none"
-                >
-                  <option value="buy">Buy (Beli)</option>
-                  <option value="sell">Sell (Jual)</option>
-                  <option value="hold">Hold (Tahan)</option>
-                  <option value="note">Catatan Analisa</option>
-                </select>
-              </div>
+              <SelectInput
+                label="Jenis Keputusan"
+                value={entryType}
+                onChange={setEntryType}
+                options={[
+                  { value: 'buy',  label: 'Buy',            sublabel: 'Beli posisi baru' },
+                  { value: 'sell', label: 'Sell',           sublabel: 'Jual / tutup posisi' },
+                  { value: 'hold', label: 'Hold',           sublabel: 'Tahan posisi' },
+                  { value: 'note', label: 'Catatan Analisa',sublabel: 'Riset & observasi' },
+                ]}
+              />
 
               <div className="sm:col-span-2">
-                <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
-                  Hipotesis & Alasan Keputusan
-                </label>
+                <label className="form-label">Hipotesis & Alasan Keputusan</label>
                 <textarea
                   required
                   rows={3}
                   value={hypothesis}
                   onChange={(e) => setHypothesis(e.target.value)}
                   placeholder="Tuliskan analisa teknikal/fundamental, katalis pasar, atau alasan masuk posisi..."
-                  className="w-full rounded-lg border border-slate-300 p-3 text-xs text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-[#1B2A4A] focus:outline-none leading-relaxed"
+                  className="form-input leading-relaxed resize-none"
+                  style={{ height: 'auto', minHeight: '80px' }}
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
-                  Target Price (Rp)
-                </label>
+                <label className="form-label">Target Price (Rp)</label>
                 <input
                   type="number"
                   value={targetPrice}
                   onChange={(e) => setTargetPrice(e.target.value)}
                   placeholder="Contoh: 10500"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 font-number-mono focus:ring-2 focus:ring-[#1B2A4A] focus:outline-none"
+                  className="form-input font-number-mono"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
-                  Stop Loss (Rp)
-                </label>
+                <label className="form-label">Stop Loss (Rp)</label>
                 <input
                   type="number"
                   value={stopLoss}
                   onChange={(e) => setStopLoss(e.target.value)}
                   placeholder="Contoh: 8900"
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 font-number-mono focus:ring-2 focus:ring-[#1B2A4A] focus:outline-none"
+                  className="form-input font-number-mono"
                 />
               </div>
 
-              <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
-                  Hasil / Status
-                </label>
-                <select
-                  value={result}
-                  onChange={(e) => setResult(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:ring-2 focus:ring-[#1B2A4A] focus:outline-none"
-                >
-                  <option value="ongoing">Masih Berjalan (Ongoing)</option>
-                  <option value="win">Win (Profit)</option>
-                  <option value="loss">Loss (Rugi)</option>
-                  <option value="breakeven">Breakeven (Impasse)</option>
-                </select>
-              </div>
+              <SelectInput
+                label="Hasil / Status"
+                value={result}
+                onChange={setResult}
+                options={[
+                  { value: 'ongoing',   label: 'Ongoing',   sublabel: 'Masih berjalan' },
+                  { value: 'win',       label: 'Win ✓',     sublabel: 'Profit' },
+                  { value: 'loss',      label: 'Loss ✗',    sublabel: 'Rugi' },
+                  { value: 'breakeven', label: 'Breakeven', sublabel: 'Impas' },
+                ]}
+              />
 
               <div>
-                <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
-                  Tanggal Tangkapan
-                </label>
+                <label className="form-label">Tanggal Tangkapan</label>
                 <input
                   type="date"
                   value={entryDate}
                   onChange={(e) => setEntryDate(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:ring-2 focus:ring-[#1B2A4A] focus:outline-none"
+                  className="form-input date-input-premium"
                 />
               </div>
 
               <div className="sm:col-span-2">
-                <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
-                  Evaluasi & Refleksi
-                </label>
+                <label className="form-label">Evaluasi & Refleksi</label>
                 <textarea
                   rows={2}
                   value={reflection}
                   onChange={(e) => setReflection(e.target.value)}
                   placeholder="Refleksi emosi atau pelajaran yang didapat setelah posisi selesai..."
-                  className="w-full rounded-lg border border-slate-300 p-3 text-xs text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-[#1B2A4A] focus:outline-none leading-relaxed"
+                  className="form-input leading-relaxed resize-none"
+                  style={{ height: 'auto', minHeight: '60px' }}
                 />
               </div>
             </div>

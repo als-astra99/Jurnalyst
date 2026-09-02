@@ -3,6 +3,9 @@
 import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import AppNavbar from '@/components/AppNavbar'
+import SelectInput from '@/components/ui/SelectInput'
+import AnimatedContent from '@/components/reactbits/AnimatedContent'
+import FadeContent from '@/components/reactbits/FadeContent'
 import {
   Printer,
   FileXls,
@@ -244,196 +247,186 @@ export default function TransactionsPage() {
   return (
     <AppNavbar>
       <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-6 print:p-0">
-        
-        {/* HEADER */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
-          <div>
-            <h1 className="font-serif-heading text-2xl md:text-3xl font-bold text-slate-900">
-              Riwayat Transaksi
-            </h1>
-            <p className="text-sm text-slate-500 mt-1">
-              Catatan rinci pemasukan dan pengeluaran harian.
-            </p>
-          </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={handlePrint}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-semibold shadow-2xs transition-all"
-            >
-              <Printer size={16} />
-              <span>Cetak</span>
-            </button>
-            <button
-              onClick={handleExportExcel}
-              disabled={exportingExcel}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 text-[#2F9E6E] hover:bg-emerald-100 text-xs font-semibold shadow-2xs transition-all disabled:opacity-50"
-            >
-              <FileXls size={16} />
-              <span>{exportingExcel ? 'Memuat...' : 'Export Excel'}</span>
-            </button>
-            <button
-              onClick={handleExportWord}
-              disabled={exportingWord}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-50 border border-blue-200 text-[#1B2A4A] hover:bg-blue-100 text-xs font-semibold shadow-2xs transition-all disabled:opacity-50"
-            >
-              <FileDoc size={16} />
-              <span>{exportingWord ? 'Memuat...' : 'Export Word'}</span>
-            </button>
-          </div>
-        </div>
-
-        {/* INPUT FORM */}
-        <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-xs print:hidden">
-          <h2 className="font-serif-heading text-base font-bold text-slate-900 mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
-            <Plus size={18} className="text-[#1B2A4A]" />
-            <span>Tambah Transaksi Baru</span>
-          </h2>
-
-          {accounts.length === 0 || categories.length === 0 ? (
-            <div className="p-4 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-3">
-              <Warning size={20} className="shrink-0 text-amber-700" />
-              <span>
-                Tambahkan minimal 1 dompet dan 1 kategori terlebih dahulu di menu{' '}
-                <a href="/accounts" className="underline font-semibold">Kelola Dompet</a> atau{' '}
-                <a href="/categories" className="underline font-semibold">Kelola Kategori</a>.
-              </span>
+        {/* ── HEADER ─────────────────────────────────────────── */}
+        <AnimatedContent distance={28} duration={0.6} threshold={0.05} className="print:hidden">
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+            <div>
+              <p className="page-header-eyebrow mb-1">Pencatatan</p>
+              <h1 className="font-serif-heading text-2xl md:text-[1.85rem] font-bold leading-tight" style={{ color: '#1A1F2E' }}>
+                Riwayat Transaksi
+              </h1>
+              <p className="text-sm mt-1.5" style={{ color: '#64748B' }}>
+                Catatan rinci pemasukan dan pengeluaran harian.
+              </p>
             </div>
-          ) : (
-            <form onSubmit={handleAdd} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
-                    Jenis Transaksi
-                  </label>
-                  <select
-                    value={type}
-                    onChange={(e) => setType(e.target.value)}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:ring-2 focus:ring-[#1B2A4A] focus:outline-none"
-                  >
-                    <option value="expense">Pengeluaran (-)</option>
-                    <option value="income">Pemasukan (+)</option>
-                  </select>
-                </div>
 
-                <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
-                    Dompet
-                  </label>
-                  <select
+            <div className="flex items-center gap-2 flex-wrap shrink-0">
+              <button onClick={handlePrint} className="btn-ghost">
+                <Printer size={15} />
+                <span>Cetak</span>
+              </button>
+              <button
+                onClick={handleExportExcel}
+                disabled={exportingExcel}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 text-[#2F9E6E] hover:bg-emerald-100 text-xs font-semibold transition-all disabled:opacity-50 hover:-translate-y-px"
+              >
+                <FileXls size={15} />
+                <span>{exportingExcel ? 'Memuat...' : 'Excel'}</span>
+              </button>
+              <button
+                onClick={handleExportWord}
+                disabled={exportingWord}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-50 border border-blue-200 text-[#1B2A4A] hover:bg-blue-100 text-xs font-semibold transition-all disabled:opacity-50 hover:-translate-y-px"
+              >
+                <FileDoc size={15} />
+                <span>{exportingWord ? 'Memuat...' : 'Word'}</span>
+              </button>
+            </div>
+          </div>
+        </AnimatedContent>
+
+        {/* ── INPUT FORM ─────────────────────────────────────── */}
+        <AnimatedContent distance={28} duration={0.65} delay={0.06} threshold={0.05} className="print:hidden">
+          <div className="stitched-card p-6 rounded-2xl">
+            <h2 className="font-serif-heading text-sm font-bold mb-4 flex items-center gap-2.5 pb-3"
+                style={{ color: '#1A1F2E', borderBottom: '1px solid #F0EDE5' }}>
+              <div
+                className="w-7 h-7 rounded-lg flex items-center justify-center"
+                style={{ background: 'linear-gradient(135deg, #C8D8F0, #A8C0E5)', color: '#0F1E36' }}
+              >
+                <Plus size={14} weight="bold" />
+              </div>
+              <span>Tambah Transaksi Baru</span>
+            </h2>
+
+            {accounts.length === 0 || categories.length === 0 ? (
+              <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-3">
+                <Warning size={18} className="shrink-0 text-amber-600 mt-0.5" />
+                <span>
+                  Tambahkan minimal 1 dompet dan 1 kategori terlebih dahulu di menu{' '}
+                  <a href="/accounts" className="underline font-semibold">Kelola Dompet</a> atau{' '}
+                  <a href="/categories" className="underline font-semibold">Kelola Kategori</a>.
+                </span>
+              </div>
+            ) : (
+              <form onSubmit={handleAdd} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  <SelectInput
+                    label="Jenis Transaksi"
+                    value={type}
+                    onChange={setType}
+                    options={[
+                      { value: 'expense', label: 'Pengeluaran (-)', sublabel: 'Uang keluar' },
+                      { value: 'income',  label: 'Pemasukan (+)',   sublabel: 'Uang masuk' },
+                    ]}
+                  />
+
+                  <SelectInput
+                    label="Dompet"
                     required
                     value={accountId}
-                    onChange={(e) => setAccountId(e.target.value)}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:ring-2 focus:ring-[#1B2A4A] focus:outline-none"
-                  >
-                    <option value="">Pilih Dompet</option>
-                    {accounts.map((a) => (
-                      <option key={a.id} value={a.id}>{a.name}</option>
-                    ))}
-                  </select>
-                </div>
+                    onChange={setAccountId}
+                    placeholder="Pilih Dompet"
+                    options={accounts.map((a) => ({ value: a.id, label: a.name }))}
+                  />
 
-                <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
-                    Kategori
-                  </label>
-                  <select
+                  <SelectInput
+                    label="Kategori"
                     required
                     value={categoryId}
-                    onChange={(e) => setCategoryId(e.target.value)}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:ring-2 focus:ring-[#1B2A4A] focus:outline-none"
-                  >
-                    <option value="">Pilih Kategori</option>
-                    {filteredCategories.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
-                    Jumlah (Rp)
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    placeholder="50000"
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 font-number-mono focus:ring-2 focus:ring-[#1B2A4A] focus:outline-none"
+                    onChange={setCategoryId}
+                    placeholder="Pilih Kategori"
+                    options={filteredCategories.map((c) => ({ value: c.id, label: c.name }))}
                   />
+
+                  <div>
+                    <label className="form-label">Jumlah (Rp)</label>
+                    <input
+                      type="number"
+                      required
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      placeholder="50000"
+                      className="form-input font-number-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="form-label">Tanggal</label>
+                    <input
+                      type="date"
+                      required
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
+                      className="form-input date-input-premium"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="form-label">Catatan (opsional)</label>
+                    <input
+                      type="text"
+                      value={note}
+                      onChange={(e) => setNote(e.target.value)}
+                      placeholder="Contoh: Makan siang"
+                      className="form-input"
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
-                    Tanggal
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:ring-2 focus:ring-[#1B2A4A] focus:outline-none"
-                  />
+                {error && (
+                  <p className="text-xs text-[#D14343] font-medium bg-red-50 p-2.5 rounded-lg border border-red-200 animate-fade-in">
+                    {error}
+                  </p>
+                )}
+
+                <div className="pt-1 flex justify-end">
+                  <button type="submit" disabled={loading} className="btn-primary">
+                    {loading ? 'Menyimpan...' : 'Simpan Transaksi'}
+                  </button>
                 </div>
-
-                <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 mb-1">
-                    Catatan (opsional)
-                  </label>
-                  <input
-                    type="text"
-                    value={note}
-                    onChange={(e) => setNote(e.target.value)}
-                    placeholder="Contoh: Makan siang"
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-xs text-slate-900 focus:ring-2 focus:ring-[#1B2A4A] focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {error && (
-                <p className="text-xs text-[#D14343] font-medium bg-red-50 p-2.5 rounded-lg border border-red-200">
-                  {error}
-                </p>
-              )}
-
-              <div className="pt-2 flex justify-end">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="px-4 py-2 rounded-lg bg-[#1B2A4A] hover:bg-slate-900 text-white font-semibold text-xs shadow-xs transition-all disabled:opacity-50"
-                >
-                  {loading ? 'Menyimpan...' : 'Simpan Transaksi'}
-                </button>
-              </div>
-            </form>
-          )}
-        </div>
-
-        {/* FILTER BAR */}
-        <div className="bg-white rounded-xl p-3.5 border border-slate-200 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4 print:hidden">
-          <div className="inline-flex p-1 rounded-lg bg-slate-100 border border-slate-200">
-            <button
-              onClick={() => setViewMode('month')}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
-                viewMode === 'month'
-                  ? 'bg-white text-[#1B2A4A] shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Bulanan
-            </button>
-            <button
-              onClick={() => setViewMode('week')}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
-                viewMode === 'week'
-                  ? 'bg-white text-[#1B2A4A] shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Mingguan
-            </button>
+              </form>
+            )}
           </div>
+        </AnimatedContent>
+
+        {/* ── FILTER BAR ─────────────────────────────────────── */}
+        <FadeContent duration={500} delay={200} threshold={0.05} className="print:hidden">
+          <div
+            className="rounded-xl p-3 flex flex-col md:flex-row items-start md:items-center justify-between gap-3"
+            style={{ background: '#FFFFFF', border: '1px solid #E8E4DC', boxShadow: '0 1px 4px rgba(26,31,46,0.04)' }}
+          >
+            <div className="inline-flex p-1 rounded-lg" style={{ background: '#F5F2EB' }}>
+              <button
+                onClick={() => setViewMode('month')}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                  viewMode === 'month'
+                    ? 'bg-white shadow-sm'
+                    : 'hover:text-slate-900'
+                }`}
+                style={viewMode === 'month'
+                  ? { color: '#0F1E36', border: '1px solid #E8E4DC' }
+                  : { color: '#64748B' }
+                }
+              >
+                Bulanan
+              </button>
+              <button
+                onClick={() => setViewMode('week')}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
+                  viewMode === 'week'
+                    ? 'bg-white shadow-sm'
+                    : 'hover:text-slate-900'
+                }`}
+                style={viewMode === 'week'
+                  ? { color: '#0F1E36', border: '1px solid #E8E4DC' }
+                  : { color: '#64748B' }
+                }
+              >
+                Mingguan
+              </button>
+            </div>
 
           <div className="flex items-center gap-2">
             {viewMode === 'month' ? (
@@ -441,7 +434,7 @@ export default function TransactionsPage() {
                 type="month"
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
-                className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-800 bg-white"
+                className="date-input-premium"
               />
             ) : (
               <div className="flex items-center gap-1.5">
@@ -477,133 +470,154 @@ export default function TransactionsPage() {
             )}
           </div>
         </div>
+        </FadeContent>
 
-        {/* TRANSACTIONS LIST */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden print:hidden">
-          <div className="border-b border-slate-100 p-4 bg-slate-50/60 flex items-center justify-between">
-            <h2 className="font-serif-heading font-bold text-slate-900 text-sm">
-              Periode — <span className="text-[#B8802E]">{periodLabel}</span>
-            </h2>
-            <span className="text-xs text-slate-500 font-medium">
-              {filteredTransactions.length} Transaksi
-            </span>
-          </div>
-
-          {groupedByDate.length === 0 ? (
-            <div className="p-12 text-center flex flex-col items-center justify-center">
-              <Receipt size={36} className="text-slate-400 mb-2" />
-              <p className="font-serif-heading text-base font-bold text-slate-800">
-                Belum Ada Transaksi
-              </p>
-              <p className="text-xs text-slate-500 max-w-sm mt-1">
-                Tidak ada data pencatatan transaksi pada periode ini.
-              </p>
+        {/* ── TRANSACTIONS LIST ──────────────────────────────── */}
+        <AnimatedContent distance={24} duration={0.65} delay={0.1} threshold={0.05} className="print:hidden">
+          <div className="rounded-2xl overflow-hidden" style={{ background: '#FFFFFF', border: '1px solid #E8E4DC', boxShadow: '0 1px 4px rgba(26,31,46,0.04)' }}>
+            <div
+              className="px-5 py-3.5 flex items-center justify-between"
+              style={{ background: 'linear-gradient(to right, #FAFAF7, #F5F2EB)', borderBottom: '1px solid #EDE9E0' }}
+            >
+              <h2 className="font-serif-heading font-bold text-sm" style={{ color: '#1A1F2E' }}>
+                Periode —{' '}
+                <span style={{ color: '#C9973A' }}>{periodLabel}</span>
+              </h2>
+              <span
+                className="text-xs font-medium px-2.5 py-0.5 rounded-full"
+                style={{ background: '#FFFFFF', border: '1px solid #E8E4DC', color: '#64748B' }}
+              >
+                {filteredTransactions.length} Transaksi
+              </span>
             </div>
-          ) : (
-            <div className="divide-y divide-slate-100">
-              {groupedByDate.map(([tgl, group]) => (
-                <div key={tgl} className="p-4 sm:p-5 hover:bg-slate-50/40 transition-colors">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2.5 mb-2.5 border-b border-slate-100 gap-1">
-                    <span className="font-serif-heading font-bold text-xs text-slate-800 flex items-center gap-2">
-                      <CalendarBlank size={14} className="text-[#1B2A4A]" />
-                      <span>{formatTanggalLengkap(tgl)}</span>
-                    </span>
 
-                    <div className="flex items-center gap-3 text-xs font-number-mono">
-                      {group.income > 0 && (
-                        <span className="text-[#2F9E6E] font-medium">
-                          Pemasukan: +{formatRupiah(group.income)}
-                        </span>
-                      )}
-                      {group.expense > 0 && (
-                        <span className="text-[#D14343] font-medium">
-                          Pengeluaran: -{formatRupiah(group.expense)}
-                        </span>
-                      )}
+            {groupedByDate.length === 0 ? (
+              <div className="p-16 text-center flex flex-col items-center justify-center">
+                <div className="w-14 h-14 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mb-4">
+                  <Receipt size={28} />
+                </div>
+                <p className="font-serif-heading text-base font-bold text-slate-700">
+                  Belum Ada Transaksi
+                </p>
+                <p className="text-xs text-slate-400 max-w-xs mt-1 leading-relaxed">
+                  Tidak ada data pencatatan pada periode ini.
+                </p>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {groupedByDate.map(([tgl, group]) => (
+                  <div key={tgl} className="p-4 sm:p-5 hover:bg-slate-50/40 transition-colors">
+                    {/* Date header */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2.5 mb-3 gap-1.5">
+                      <span className="font-serif-heading font-bold text-xs text-slate-800 flex items-center gap-2">
+                        <CalendarBlank size={13} className="text-[#1B2A4A]" />
+                        <span>{formatTanggalLengkap(tgl)}</span>
+                      </span>
+                      <div className="flex items-center gap-3 text-[11px] font-number-mono">
+                        {group.income > 0 && (
+                          <span className="badge-income">
+                            +{formatRupiah(group.income)}
+                          </span>
+                        )}
+                        {group.expense > 0 && (
+                          <span className="badge-expense">
+                            -{formatRupiah(group.expense)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Transaction rows */}
+                    <div className="space-y-1.5">
+                      {group.items.map((t) => (
+                        <div
+                          key={t.id}
+                          className="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50/60 border border-slate-100 hover:border-slate-200 hover:bg-white transition-all duration-150"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div
+                              className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                                t.type === 'income'
+                                  ? 'bg-emerald-100 text-[#2F9E6E]'
+                                  : 'bg-red-100 text-[#D14343]'
+                              }`}
+                            >
+                              {t.type === 'income'
+                                ? <ArrowUpRight size={15} weight="bold" />
+                                : <ArrowDownRight size={15} weight="bold" />
+                              }
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-xs font-bold text-slate-900 truncate">
+                                {t.categories?.name || 'Tanpa Kategori'}
+                              </p>
+                              <p className="text-[11px] text-slate-400 truncate">
+                                <span className="font-medium text-slate-600">{t.accounts?.name || '-'}</span>
+                                {t.note && <span> · {t.note}</span>}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3 shrink-0">
+                            <span
+                              className={`text-xs font-bold font-number-mono ${
+                                t.type === 'income' ? 'text-[#2F9E6E]' : 'text-[#D14343]'
+                              }`}
+                            >
+                              {t.type === 'income' ? '+' : '-'}&nbsp;{formatRupiah(t.amount)}
+                            </span>
+                            <button
+                              onClick={() => handleDelete(t.id)}
+                              title="Hapus"
+                              className="text-slate-300 hover:text-red-500 p-1 rounded-lg hover:bg-red-50 transition-all"
+                            >
+                              <Trash size={13} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
+                ))}
 
-                  <div className="space-y-2">
-                    {group.items.map((t) => (
-                      <div
-                        key={t.id}
-                        className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-slate-50/50 border border-slate-100 hover:border-slate-200 transition-all"
+                {/* Total footer */}
+                <div
+                  className="px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+                  style={{
+                    background: 'linear-gradient(135deg, #0F1E36 0%, #162848 60%, #1A2F54 100%)',
+                    borderTop: '1px solid rgba(201,151,58,0.15)',
+                  }}
+                >
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest font-bold" style={{ color: 'rgba(201,151,58,0.8)' }}>
+                      Total Periode
+                    </p>
+                    <p className="font-serif-heading text-sm font-bold text-white mt-0.5">{periodLabel}</p>
+                  </div>
+                  <div className="flex items-center gap-6 text-xs font-number-mono">
+                    <div>
+                      <span className="text-[10px] block mb-0.5" style={{ color: 'rgba(148,163,184,0.65)' }}>Pemasukan</span>
+                      <span className="font-bold" style={{ color: '#4ADE80' }}>+{formatRupiah(totalIncome)}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] block mb-0.5" style={{ color: 'rgba(148,163,184,0.65)' }}>Pengeluaran</span>
+                      <span className="font-bold" style={{ color: '#F87171' }}>-{formatRupiah(totalExpense)}</span>
+                    </div>
+                    <div className="pl-4" style={{ borderLeft: '1px solid rgba(255,255,255,0.12)' }}>
+                      <span className="text-[10px] block mb-0.5" style={{ color: 'rgba(148,163,184,0.65)' }}>Net</span>
+                      <span
+                        className="font-bold"
+                        style={{ color: totalIncome - totalExpense >= 0 ? '#FFFFFF' : '#F87171' }}
                       >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div
-                            className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                              t.type === 'income'
-                                ? 'bg-emerald-100 text-[#2F9E6E]'
-                                : 'bg-red-100 text-[#D14343]'
-                            }`}
-                          >
-                            {t.type === 'income' ? <ArrowUpRight size={16} weight="bold" /> : <ArrowDownRight size={16} weight="bold" />}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-xs font-bold text-slate-900 truncate">
-                              {t.categories?.name || 'Tanpa Kategori'}
-                            </p>
-                            <p className="text-[11px] text-slate-500 truncate flex items-center gap-1.5">
-                              <span className="font-medium text-slate-700">{t.accounts?.name || '-'}</span>
-                              {t.note && <span>• {t.note}</span>}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-3 shrink-0">
-                          <span
-                            className={`text-xs font-bold font-number-mono ${
-                              t.type === 'income' ? 'text-[#2F9E6E]' : 'text-[#D14343]'
-                            }`}
-                          >
-                            {t.type === 'income' ? '+' : '-'} {formatRupiah(t.amount)}
-                          </span>
-
-                          <button
-                            onClick={() => handleDelete(t.id)}
-                            title="Hapus Transaksi"
-                            className="text-slate-400 hover:text-red-500 p-1 text-xs transition-colors"
-                          >
-                            <Trash size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-
-              {/* TOTAL FOOTER */}
-              <div className="p-4 bg-slate-900 text-white flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div>
-                  <p className="text-[10px] uppercase tracking-wider text-amber-300 font-semibold">
-                    Total Periode
-                  </p>
-                  <p className="font-serif-heading text-sm font-bold text-white">
-                    {periodLabel}
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-5 text-xs font-number-mono">
-                  <div>
-                    <span className="text-[10px] text-slate-400 block">Pemasukan</span>
-                    <span className="font-bold text-[#2F9E6E]">+{formatRupiah(totalIncome)}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-slate-400 block">Pengeluaran</span>
-                    <span className="font-bold text-[#D14343]">-{formatRupiah(totalExpense)}</span>
-                  </div>
-                  <div className="pl-3 border-l border-slate-700">
-                    <span className="text-[10px] text-slate-400 block">Net</span>
-                    <span className={`font-bold ${totalIncome - totalExpense >= 0 ? 'text-white' : 'text-[#D14343]'}`}>
-                      {formatRupiah(totalIncome - totalExpense)}
-                    </span>
+                        {formatRupiah(totalIncome - totalExpense)}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        </AnimatedContent>
 
         {/* PRINT TABLE */}
         <div className="hidden print:block space-y-4">

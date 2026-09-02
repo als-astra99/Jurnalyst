@@ -1,5 +1,6 @@
 import React from 'react'
 import Image from 'next/image'
+import BlurText from '@/components/reactbits/BlurText'
 
 interface JurnalystLogoProps {
   className?: string
@@ -67,20 +68,28 @@ export default function JurnalystLogo({
       {/* BRAND TYPOGRAPHY */}
       {showText && (
         <div className="flex flex-col justify-center">
-          <span
+          <BlurText
+            text="Jurnalyst"
+            delay={80}
+            animateBy="letters"
+            direction="top"
+            threshold={0.05}
+            stepDuration={0.25}
             className={`tracking-tight leading-none ${titleClasses} ${
               lightText ? 'text-white' : 'text-slate-900'
             }`}
-          >
-            Jurnalyst
-          </span>
-          <span
+          />
+          <BlurText
+            text="Personal Finance & Journal"
+            delay={40}
+            animateBy="letters"
+            direction="bottom"
+            threshold={0.05}
+            stepDuration={0.2}
             className={`uppercase leading-none ${subClasses} ${
               lightText ? 'text-amber-300' : 'text-[#B8802E]'
             }`}
-          >
-            Personal Finance & Journal
-          </span>
+          />
         </div>
       )}
     </div>
