@@ -9,6 +9,8 @@ export interface SelectOption {
   value: string
   label: string
   sublabel?: string
+  /** Jika true, item ini adalah header grup (tidak bisa dipilih) */
+  isGroup?: boolean
 }
 
 interface SelectInputProps {
@@ -48,7 +50,9 @@ export default function SelectInput({
     const rect = triggerRef.current.getBoundingClientRect()
     const spaceBelow = window.innerHeight - rect.bottom
     const spaceAbove = rect.top
-    const dropdownHeight = Math.min(options.length * 62 + 16, 320)
+    const itemCount = options.filter((o) => !o.isGroup).length
+    const groupCount = options.filter((o) => o.isGroup).length
+    const dropdownHeight = Math.min(itemCount * 54 + groupCount * 32 + 16, 320)
 
     // Buka ke atas kalau space bawah tidak cukup
     const openUp = spaceBelow < dropdownHeight && spaceAbove > spaceBelow
@@ -132,6 +136,28 @@ export default function SelectInput({
             padding: '0.375rem',
           }}>
             {options.map((opt, idx) => {
+              // ── Group header — tidak bisa diklik ──────────────────
+              if (opt.isGroup) {
+                return (
+                  <div
+                    key={`group-${opt.label}-${idx}`}
+                    style={{
+                      padding: '0.375rem 0.625rem 0.25rem',
+                      fontSize: '0.6875rem',
+                      fontWeight: 700,
+                      letterSpacing: '0.07em',
+                      textTransform: 'uppercase',
+                      color: '#C9973A',
+                      borderTop: idx > 0 ? '1px solid #F0EDE5' : 'none',
+                      marginTop: idx > 0 ? '0.25rem' : 0,
+                    }}
+                  >
+                    {opt.label}
+                  </div>
+                )
+              }
+
+              // ── Item biasa ────────────────────────────────────────
               const isSelected = opt.value === value
               return (
                 <motion.button
@@ -162,7 +188,16 @@ export default function SelectInput({
                   <div>
                     <span className="block">{opt.label}</span>
                     {opt.sublabel && (
-                      <span className="block text-[11px] mt-0.5" style={{ color: '#94A3B8' }}>
+                      <span
+                        className="block text-[11px] mt-0.5 font-medium"
+                        style={{
+                          color: opt.sublabel.includes('Terbuka')
+                            ? '#2F9E6E'
+                            : opt.sublabel.includes('Ditutup')
+                            ? '#94A3B8'
+                            : '#94A3B8',
+                        }}
+                      >
                         {opt.sublabel}
                       </span>
                     )}

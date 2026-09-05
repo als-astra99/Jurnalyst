@@ -21,7 +21,7 @@ type Holding = {
   quantity: number
   avg_buy_price: number
   status: string
-  assets: { name: string; symbol: string } | null
+  assets: { name: string; symbol: string; asset_type: string } | null
 }
 
 type JournalEntry = {
@@ -58,7 +58,7 @@ export default function JournalPage() {
   const loadData = async () => {
     const { data: holdingData } = await supabase
       .from('portfolio_holdings')
-      .select('id, quantity, avg_buy_price, status, assets(name, symbol)')
+      .select('id, quantity, avg_buy_price, status, assets(name, symbol, asset_type)')
 
     const { data: entryData } = await supabase
       .from('journal_entries')
@@ -206,14 +206,42 @@ export default function JournalPage() {
                 value={holdingId}
                 onChange={setHoldingId}
                 placeholder="Tidak ada / Catatan Umum"
-                options={[
-                  { value: '', label: 'Tidak ada / Catatan Umum' },
-                  ...holdings.map((h) => ({
-                    value: h.id,
-                    label: `${h.assets?.name} (${h.assets?.symbol})`,
-                    sublabel: h.status === 'open' ? 'Terbuka' : 'Ditutup',
-                  })),
-                ]}
+                options={(() => {
+                  const base = [{ value: '', label: 'Tidak ada / Catatan Umum' }]
+
+                  // Kelompokkan holdings per aset (symbol sebagai key)
+                  const assetMap = new Map<string, { groupLabel: string; items: Holding[] }>()
+                  for (const h of holdings) {
+                    if (!h.assets) continue
+                    const key = h.assets.symbol
+                    if (!assetMap.has(key)) {
+                      assetMap.set(key, {
+                        groupLabel: `${h.assets.name} — ${h.assets.symbol}`,
+                        items: [],
+                      })
+                    }
+                    assetMap.get(key)!.items.push(h)
+                  }
+
+                  const grouped: typeof base[number][] = []
+                  let groupIdx = 0
+                  for (const [, group] of assetMap) {
+                    grouped.push({
+                      value: `__group_${groupIdx++}__`,
+                      label: group.groupLabel,
+                      isGroup: true,
+                    } as any)
+                    for (const h of group.items) {
+                      grouped.push({
+                        value: h.id,
+                        label: `${h.quantity} unit @ Rp ${h.avg_buy_price.toLocaleString('id-ID')}`,
+                        sublabel: h.status === 'open' ? '● Terbuka' : '○ Ditutup',
+                      })
+                    }
+                  }
+
+                  return [...base, ...grouped]
+                })()}
               />
 
               <SelectInput
