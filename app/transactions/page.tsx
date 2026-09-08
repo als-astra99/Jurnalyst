@@ -37,7 +37,7 @@ type Transaction = {
   categories: { name: string } | null
 }
 
-const HARI = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
+const HARI  = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
 const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
 
 function formatTanggalLengkap(dateStr: string) {
@@ -66,29 +66,29 @@ function toDateStr(d: Date) {
 }
 
 export default function TransactionsPage() {
-  const [accounts, setAccounts] = useState<Account[]>([])
-  const [categories, setCategories] = useState<Category[]>([])
+  const [accounts, setAccounts]               = useState<Account[]>([])
+  const [categories, setCategories]           = useState<Category[]>([])
   const [allTransactions, setAllTransactions] = useState<Transaction[]>([])
 
-  // Tab: 'regular' | 'recurring'
   const [activeTab, setActiveTab] = useState<'regular' | 'recurring'>('regular')
 
-  const [accountId, setAccountId] = useState('')
+  const [accountId,  setAccountId]  = useState('')
   const [categoryId, setCategoryId] = useState('')
-  const [amount, setAmount] = useState('')
-  const [type, setType] = useState('expense')
-  const [note, setNote] = useState('')
-  // Min date = hari ini, tidak boleh input tanggal lampau
+  const [amount,     setAmount]     = useState('')
+  const [type,       setType]       = useState('expense')
+  const [note,       setNote]       = useState('')
+
   const today = new Date().toISOString().slice(0, 10)
   const [date, setDate] = useState(today)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [exportingWord, setExportingWord] = useState(false)
+
+  const [loading,        setLoading]        = useState(false)
+  const [error,          setError]          = useState('')
+  const [exportingWord,  setExportingWord]  = useState(false)
   const [exportingExcel, setExportingExcel] = useState(false)
 
-  const [viewMode, setViewMode] = useState<'month' | 'week'>('month')
+  const [viewMode,      setViewMode]      = useState<'month' | 'week'>('month')
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7))
-  const [weekAnchor, setWeekAnchor] = useState(new Date())
+  const [weekAnchor,    setWeekAnchor]    = useState(new Date())
 
   const supabase = createClient()
 
@@ -118,8 +118,8 @@ export default function TransactionsPage() {
     } else {
       const { monday, sunday } = getWeekRange(weekAnchor)
       const startStr = toDateStr(monday)
-      const endStr = toDateStr(sunday)
-      const label = `${monday.getDate()} ${BULAN[monday.getMonth()]} - ${sunday.getDate()} ${BULAN[sunday.getMonth()]} ${sunday.getFullYear()}`
+      const endStr   = toDateStr(sunday)
+      const label    = `${monday.getDate()} ${BULAN[monday.getMonth()]} - ${sunday.getDate()} ${BULAN[sunday.getMonth()]} ${sunday.getFullYear()}`
       const filtered = allTransactions.filter((t) => t.transaction_date >= startStr && t.transaction_date <= endStr)
       return { periodLabel: label, filteredTransactions: filtered }
     }
@@ -129,14 +129,14 @@ export default function TransactionsPage() {
     const map: Record<string, { income: number; expense: number; items: Transaction[] }> = {}
     for (const t of filteredTransactions) {
       if (!map[t.transaction_date]) map[t.transaction_date] = { income: 0, expense: 0, items: [] }
-      if (t.type === 'income') map[t.transaction_date].income += Number(t.amount)
-      else map[t.transaction_date].expense += Number(t.amount)
+      if (t.type === 'income') map[t.transaction_date].income  += Number(t.amount)
+      else                     map[t.transaction_date].expense += Number(t.amount)
       map[t.transaction_date].items.push(t)
     }
     return Object.entries(map).sort(([a], [b]) => a.localeCompare(b))
   }, [filteredTransactions])
 
-  const totalIncome = filteredTransactions.filter((t) => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0)
+  const totalIncome  = filteredTransactions.filter((t) => t.type === 'income').reduce((s, t)  => s + Number(t.amount), 0)
   const totalExpense = filteredTransactions.filter((t) => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0)
 
   const handleAdd = async (e: React.FormEvent) => {
@@ -148,23 +148,18 @@ export default function TransactionsPage() {
     if (!user) return
 
     const { error } = await supabase.from('transactions').insert({
-      user_id: user.id,
-      account_id: accountId,
-      category_id: categoryId,
-      amount: parseFloat(amount),
+      user_id:          user.id,
+      account_id:       accountId,
+      category_id:      categoryId,
+      amount:           parseFloat(amount),
       type,
       note,
       transaction_date: date,
     })
 
-    if (error) {
-      setError(error.message)
-      setLoading(false)
-      return
-    }
+    if (error) { setError(error.message); setLoading(false); return }
 
-    setAmount('')
-    setNote('')
+    setAmount(''); setNote('')
     setLoading(false)
     loadData()
   }
@@ -176,17 +171,15 @@ export default function TransactionsPage() {
 
   const handlePrint = () => window.print()
 
-  // -- Rekap helpers (dipakai oleh kedua export) -------------------------
+  // ── Rekap helpers ──────────────────────────────────────────────────────
   const buildSummaries = () => {
-    const BULAN_NAMES = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
-
-    // Per dompet � dari SEMUA transaksi (bukan hanya periode)
+    // Per dompet — dari SEMUA transaksi
     const walletMap: Record<string, { name: string; income: number; expense: number }> = {}
     for (const t of allTransactions) {
       const name = t.accounts?.name || 'Tanpa Dompet'
       if (!walletMap[name]) walletMap[name] = { name, income: 0, expense: 0 }
-      if (t.type === 'income') walletMap[name].income += Number(t.amount)
-      else walletMap[name].expense += Number(t.amount)
+      if (t.type === 'income') walletMap[name].income  += Number(t.amount)
+      else                     walletMap[name].expense += Number(t.amount)
     }
 
     // Per bulan
@@ -194,8 +187,8 @@ export default function TransactionsPage() {
     for (const t of allTransactions) {
       const ym = t.transaction_date.slice(0, 7)
       if (!monthMap[ym]) monthMap[ym] = { income: 0, expense: 0 }
-      if (t.type === 'income') monthMap[ym].income += Number(t.amount)
-      else monthMap[ym].expense += Number(t.amount)
+      if (t.type === 'income') monthMap[ym].income  += Number(t.amount)
+      else                     monthMap[ym].expense += Number(t.amount)
     }
 
     // Per tahun
@@ -203,20 +196,20 @@ export default function TransactionsPage() {
     for (const t of allTransactions) {
       const y = t.transaction_date.slice(0, 4)
       if (!yearMap[y]) yearMap[y] = { income: 0, expense: 0 }
-      if (t.type === 'income') yearMap[y].income += Number(t.amount)
-      else yearMap[y].expense += Number(t.amount)
+      if (t.type === 'income') yearMap[y].income  += Number(t.amount)
+      else                     yearMap[y].expense += Number(t.amount)
     }
 
     return {
       walletSummary: Object.values(walletMap),
       monthlySummary: Object.entries(monthMap)
-        .sort(([a],[b]) => a.localeCompare(b))
+        .sort(([a], [b]) => a.localeCompare(b))
         .map(([ym, v]) => {
           const [yr, m] = ym.split('-')
-          return { label: `${BULAN_NAMES[parseInt(m)-1]} ${yr}`, income: v.income, expense: v.expense }
+          return { label: `${BULAN[parseInt(m) - 1]} ${yr}`, income: v.income, expense: v.expense }
         }),
       yearlySummary: Object.entries(yearMap)
-        .sort(([a],[b]) => a.localeCompare(b))
+        .sort(([a], [b]) => a.localeCompare(b))
         .map(([yr, v]) => ({ label: yr, income: v.income, expense: v.expense })),
     }
   }
@@ -225,7 +218,7 @@ export default function TransactionsPage() {
     setExportingExcel(true)
     try {
       const res = await fetch('/api/reports/excel', {
-        method: 'POST',
+        method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           periodLabel,
@@ -233,10 +226,10 @@ export default function TransactionsPage() {
             date: tgl,
             items: g.items.map((t) => ({
               kategori: t.categories?.name || '-',
-              dompet: t.accounts?.name || '-',
-              jenis: t.type === 'income' ? 'Pemasukan' : 'Pengeluaran',
-              catatan: t.note || '',
-              jumlah: t.amount,
+              dompet:   t.accounts?.name   || '-',
+              jenis:    t.type === 'income' ? 'Pemasukan' : 'Pengeluaran',
+              catatan:  t.note || '',
+              jumlah:   t.amount,
             })),
           })),
           totalIncome,
@@ -248,10 +241,10 @@ export default function TransactionsPage() {
       if (!res.ok) throw new Error('Gagal membuat file Excel')
 
       const blob = await res.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `Riwayat-Transaksi-${periodLabel.replace(/\s+/g, '-')}.xlsx`
+      const url  = window.URL.createObjectURL(blob)
+      const a    = document.createElement('a')
+      a.href     = url
+      a.download = `Laporan-Jurnalyst-${periodLabel.replace(/\s+/g, '-')}.xlsx`
       a.click()
       window.URL.revokeObjectURL(url)
     } catch (err) {
@@ -264,19 +257,19 @@ export default function TransactionsPage() {
     setExportingWord(true)
     try {
       const res = await fetch('/api/reports/word', {
-        method: 'POST',
+        method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           periodLabel,
           groups: groupedByDate.map(([tgl, g]) => ({
-            date: tgl,
+            date:     tgl,
             dayLabel: formatTanggalLengkap(tgl),
             items: g.items.map((t) => ({
               kategori: t.categories?.name || '-',
-              dompet: t.accounts?.name || '-',
-              jenis: t.type === 'income' ? 'Pemasukan' : 'Pengeluaran',
-              catatan: t.note || '',
-              jumlah: t.amount,
+              dompet:   t.accounts?.name   || '-',
+              jenis:    t.type === 'income' ? 'Pemasukan' : 'Pengeluaran',
+              catatan:  t.note || '',
+              jumlah:   t.amount,
             })),
           })),
           totalIncome,
@@ -288,10 +281,10 @@ export default function TransactionsPage() {
       if (!res.ok) throw new Error('Gagal membuat file Word')
 
       const blob = await res.blob()
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `Riwayat-Transaksi-${periodLabel.replace(/\s+/g, '-')}.docx`
+      const url  = window.URL.createObjectURL(blob)
+      const a    = document.createElement('a')
+      a.href     = url
+      a.download = `Laporan-Jurnalyst-${periodLabel.replace(/\s+/g, '-')}.docx`
       a.click()
       window.URL.revokeObjectURL(url)
     } catch (err) {
@@ -304,7 +297,7 @@ export default function TransactionsPage() {
     <AppNavbar>
       <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-6 print:p-0">
 
-        {/* -- HEADER ------------------------------------------- */}
+        {/* HEADER */}
         <AnimatedContent distance={28} duration={0.6} threshold={0.05} className="print:hidden">
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
             <div>
@@ -350,7 +343,7 @@ export default function TransactionsPage() {
           </div>
         </AnimatedContent>
 
-        {/* -- TAB SWITCHER ------------------------------------- */}
+        {/* TAB SWITCHER */}
         <div
           className="inline-flex p-1 rounded-xl gap-1 print:hidden"
           style={{ background: '#F0EDE5', border: '1px solid #E8E4DC' }}
@@ -362,10 +355,7 @@ export default function TransactionsPage() {
               background: 'linear-gradient(135deg, #0F1E36, #162848)',
               color: '#FFFFFF',
               boxShadow: '0 2px 8px rgba(15,30,54,0.25)',
-            } : {
-              background: 'transparent',
-              color: '#64748B',
-            }}
+            } : { background: 'transparent', color: '#64748B' }}
           >
             <ListBullets size={14} weight={activeTab === 'regular' ? 'fill' : 'regular'} />
             <span>Transaksi Biasa</span>
@@ -377,29 +367,26 @@ export default function TransactionsPage() {
               background: 'linear-gradient(135deg, #3B1FA8, #5B3BD5)',
               color: '#FFFFFF',
               boxShadow: '0 2px 8px rgba(59,31,168,0.3)',
-            } : {
-              background: 'transparent',
-              color: '#64748B',
-            }}
+            } : { background: 'transparent', color: '#64748B' }}
           >
             <RepeatOnce size={14} weight={activeTab === 'recurring' ? 'fill' : 'regular'} />
             <span>Transaksi Berulang</span>
           </button>
         </div>
 
-        {/* -- TAB: BERULANG ------------------------------------ */}
-        {activeTab === 'recurring' && (
-          <RecurringTab />
-        )}
+        {/* TAB: BERULANG */}
+        {activeTab === 'recurring' && <RecurringTab />}
 
-        {/* -- TAB: BIASA --------------------------------------- */}
+        {/* TAB: BIASA */}
         {activeTab === 'regular' && (<>
 
-        {/* -- INPUT FORM --------------------------------------- */}
+        {/* INPUT FORM */}
         <AnimatedContent distance={28} duration={0.65} delay={0.06} threshold={0.05} className="print:hidden">
           <div className="stitched-card p-6 rounded-2xl">
-            <h2 className="font-serif-heading text-sm font-bold mb-4 flex items-center gap-2.5 pb-3"
-                style={{ color: '#1A1F2E', borderBottom: '1px solid #F0EDE5' }}>
+            <h2
+              className="font-serif-heading text-sm font-bold mb-4 flex items-center gap-2.5 pb-3"
+              style={{ color: '#1A1F2E', borderBottom: '1px solid #F0EDE5' }}
+            >
               <div
                 className="w-7 h-7 rounded-lg flex items-center justify-center"
                 style={{ background: 'linear-gradient(135deg, #C8D8F0, #A8C0E5)', color: '#0F1E36' }}
@@ -427,10 +414,9 @@ export default function TransactionsPage() {
                     onChange={setType}
                     options={[
                       { value: 'expense', label: 'Pengeluaran (-)', sublabel: 'Uang keluar' },
-                      { value: 'income',  label: 'Pemasukan (+)',   sublabel: 'Uang masuk' },
+                      { value: 'income',  label: 'Pemasukan (+)',   sublabel: 'Uang masuk'  },
                     ]}
                   />
-
                   <SelectInput
                     label="Dompet"
                     required
@@ -439,7 +425,6 @@ export default function TransactionsPage() {
                     placeholder="Pilih Dompet"
                     options={accounts.map((a) => ({ value: a.id, label: a.name }))}
                   />
-
                   <SelectInput
                     label="Kategori"
                     required
@@ -448,7 +433,6 @@ export default function TransactionsPage() {
                     placeholder="Pilih Kategori"
                     options={filteredCategories.map((c) => ({ value: c.id, label: c.name }))}
                   />
-
                   <div>
                     <label className="form-label">Jumlah (Rp)</label>
                     <input
@@ -460,7 +444,6 @@ export default function TransactionsPage() {
                       className="form-input font-number-mono"
                     />
                   </div>
-
                   <div>
                     <label className="form-label">Tanggal</label>
                     <input
@@ -475,7 +458,6 @@ export default function TransactionsPage() {
                       Hanya tanggal hari ini dan sebelumnya yang diperbolehkan.
                     </p>
                   </div>
-
                   <div>
                     <label className="form-label">Catatan (opsional)</label>
                     <input
@@ -504,88 +486,62 @@ export default function TransactionsPage() {
           </div>
         </AnimatedContent>
 
-        {/* -- FILTER BAR --------------------------------------- */}
+        {/* FILTER BAR */}
         <FadeContent duration={500} delay={200} threshold={0.05} className="print:hidden">
           <div
             className="rounded-xl p-3 flex flex-col md:flex-row items-start md:items-center justify-between gap-3"
             style={{ background: '#FFFFFF', border: '1px solid #E8E4DC', boxShadow: '0 1px 4px rgba(26,31,46,0.04)' }}
           >
             <div className="inline-flex p-1 rounded-lg" style={{ background: '#F5F2EB' }}>
-              <button
-                onClick={() => setViewMode('month')}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
-                  viewMode === 'month'
-                    ? 'bg-white shadow-sm'
-                    : 'hover:text-slate-900'
-                }`}
-                style={viewMode === 'month'
-                  ? { color: '#0F1E36', border: '1px solid #E8E4DC' }
-                  : { color: '#64748B' }
-                }
-              >
-                Bulanan
-              </button>
-              <button
-                onClick={() => setViewMode('week')}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
-                  viewMode === 'week'
-                    ? 'bg-white shadow-sm'
-                    : 'hover:text-slate-900'
-                }`}
-                style={viewMode === 'week'
-                  ? { color: '#0F1E36', border: '1px solid #E8E4DC' }
-                  : { color: '#64748B' }
-                }
-              >
-                Mingguan
-              </button>
+              {(['month', 'week'] as const).map((mode) => (
+                <button
+                  key={mode}
+                  onClick={() => setViewMode(mode)}
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${viewMode === mode ? 'bg-white shadow-sm' : 'hover:text-slate-900'}`}
+                  style={viewMode === mode ? { color: '#0F1E36', border: '1px solid #E8E4DC' } : { color: '#64748B' }}
+                >
+                  {mode === 'month' ? 'Bulanan' : 'Mingguan'}
+                </button>
+              ))}
             </div>
 
-          <div className="flex items-center gap-2">
-            {viewMode === 'month' ? (
-              <input
-                type="month"
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className="date-input-premium"
-              />
-            ) : (
-              <div className="flex items-center gap-1.5">
-                <button
-                  onClick={() => {
-                    const prev = new Date(weekAnchor)
-                    prev.setDate(prev.getDate() - 7)
-                    setWeekAnchor(prev)
-                  }}
-                  className="p-1.5 rounded-md border border-slate-300 bg-white text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-1"
-                >
-                  <CaretLeft size={14} />
-                  <span>Sebelumnya</span>
-                </button>
-                <button
-                  onClick={() => setWeekAnchor(new Date())}
-                  className="px-2.5 py-1.5 rounded-md border border-slate-300 bg-white text-xs font-medium text-slate-700 hover:bg-slate-50"
-                >
-                  Minggu Ini
-                </button>
-                <button
-                  onClick={() => {
-                    const next = new Date(weekAnchor)
-                    next.setDate(next.getDate() + 7)
-                    setWeekAnchor(next)
-                  }}
-                  className="p-1.5 rounded-md border border-slate-300 bg-white text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-1"
-                >
-                  <span>Selanjutnya</span>
-                  <CaretRight size={14} />
-                </button>
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              {viewMode === 'month' ? (
+                <input
+                  type="month"
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  className="date-input-premium"
+                />
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => { const p = new Date(weekAnchor); p.setDate(p.getDate() - 7); setWeekAnchor(p) }}
+                    className="p-1.5 rounded-md border border-slate-300 bg-white text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-1"
+                  >
+                    <CaretLeft size={14} />
+                    <span>Sebelumnya</span>
+                  </button>
+                  <button
+                    onClick={() => setWeekAnchor(new Date())}
+                    className="px-2.5 py-1.5 rounded-md border border-slate-300 bg-white text-xs font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    Minggu Ini
+                  </button>
+                  <button
+                    onClick={() => { const n = new Date(weekAnchor); n.setDate(n.getDate() + 7); setWeekAnchor(n) }}
+                    className="p-1.5 rounded-md border border-slate-300 bg-white text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-1"
+                  >
+                    <span>Selanjutnya</span>
+                    <CaretRight size={14} />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
         </FadeContent>
 
-        {/* -- TRANSACTIONS LIST -------------------------------- */}
+        {/* TRANSACTIONS LIST */}
         <AnimatedContent distance={24} duration={0.65} delay={0.1} threshold={0.05} className="print:hidden">
           <div className="rounded-2xl overflow-hidden" style={{ background: '#FFFFFF', border: '1px solid #E8E4DC', boxShadow: '0 1px 4px rgba(26,31,46,0.04)' }}>
             <div
@@ -593,7 +549,7 @@ export default function TransactionsPage() {
               style={{ background: 'linear-gradient(to right, #FAFAF7, #F5F2EB)', borderBottom: '1px solid #EDE9E0' }}
             >
               <h2 className="font-serif-heading font-bold text-sm" style={{ color: '#1A1F2E' }}>
-                Periode �{' '}
+                Periode &mdash;{' '}
                 <span style={{ color: '#C9973A' }}>{periodLabel}</span>
               </h2>
               <span
@@ -609,9 +565,7 @@ export default function TransactionsPage() {
                 <div className="w-14 h-14 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mb-4">
                   <Receipt size={28} />
                 </div>
-                <p className="font-serif-heading text-base font-bold text-slate-700">
-                  Belum Ada Transaksi
-                </p>
+                <p className="font-serif-heading text-base font-bold text-slate-700">Belum Ada Transaksi</p>
                 <p className="text-xs text-slate-400 max-w-xs mt-1 leading-relaxed">
                   Tidak ada data pencatatan pada periode ini.
                 </p>
@@ -620,27 +574,17 @@ export default function TransactionsPage() {
               <div className="divide-y divide-slate-100">
                 {groupedByDate.map(([tgl, group]) => (
                   <div key={tgl} className="p-4 sm:p-5 hover:bg-slate-50/40 transition-colors">
-                    {/* Date header */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2.5 mb-3 gap-1.5">
                       <span className="font-serif-heading font-bold text-xs text-slate-800 flex items-center gap-2">
                         <CalendarBlank size={13} className="text-[#1B2A4A]" />
                         <span>{formatTanggalLengkap(tgl)}</span>
                       </span>
                       <div className="flex items-center gap-3 text-[11px] font-number-mono">
-                        {group.income > 0 && (
-                          <span className="badge-income">
-                            +{formatRupiah(group.income)}
-                          </span>
-                        )}
-                        {group.expense > 0 && (
-                          <span className="badge-expense">
-                            -{formatRupiah(group.expense)}
-                          </span>
-                        )}
+                        {group.income  > 0 && <span className="badge-income">+{formatRupiah(group.income)}</span>}
+                        {group.expense > 0 && <span className="badge-expense">-{formatRupiah(group.expense)}</span>}
                       </div>
                     </div>
 
-                    {/* Transaction rows */}
                     <div className="space-y-1.5">
                       {group.items.map((t) => (
                         <div
@@ -650,9 +594,7 @@ export default function TransactionsPage() {
                           <div className="flex items-center gap-3 min-w-0">
                             <div
                               className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-                                t.type === 'income'
-                                  ? 'bg-emerald-100 text-[#2F9E6E]'
-                                  : 'bg-red-100 text-[#D14343]'
+                                t.type === 'income' ? 'bg-emerald-100 text-[#2F9E6E]' : 'bg-red-100 text-[#D14343]'
                               }`}
                             >
                               {t.type === 'income'
@@ -666,17 +608,13 @@ export default function TransactionsPage() {
                               </p>
                               <p className="text-[11px] text-slate-400 truncate">
                                 <span className="font-medium text-slate-600">{t.accounts?.name || '-'}</span>
-                                {t.note && <span> � {t.note}</span>}
+                                {t.note && <span> &middot; {t.note}</span>}
                               </p>
                             </div>
                           </div>
 
                           <div className="flex items-center gap-3 shrink-0">
-                            <span
-                              className={`text-xs font-bold font-number-mono ${
-                                t.type === 'income' ? 'text-[#2F9E6E]' : 'text-[#D14343]'
-                              }`}
-                            >
+                            <span className={`text-xs font-bold font-number-mono ${t.type === 'income' ? 'text-[#2F9E6E]' : 'text-[#D14343]'}`}>
                               {t.type === 'income' ? '+' : '-'}&nbsp;{formatRupiah(t.amount)}
                             </span>
                             <button
@@ -718,10 +656,7 @@ export default function TransactionsPage() {
                     </div>
                     <div className="pl-4" style={{ borderLeft: '1px solid rgba(255,255,255,0.12)' }}>
                       <span className="text-[10px] block mb-0.5" style={{ color: 'rgba(148,163,184,0.65)' }}>Net</span>
-                      <span
-                        className="font-bold"
-                        style={{ color: totalIncome - totalExpense >= 0 ? '#FFFFFF' : '#F87171' }}
-                      >
+                      <span className="font-bold" style={{ color: totalIncome - totalExpense >= 0 ? '#FFFFFF' : '#F87171' }}>
                         {formatRupiah(totalIncome - totalExpense)}
                       </span>
                     </div>
@@ -734,7 +669,7 @@ export default function TransactionsPage() {
 
         {/* PRINT TABLE */}
         <div className="hidden print:block space-y-4">
-          <h2 className="text-xl font-bold text-gray-900">Riwayat Transaksi � {periodLabel}</h2>
+          <h2 className="text-xl font-bold text-gray-900">Riwayat Transaksi &mdash; {periodLabel}</h2>
           <table className="w-full border-collapse text-xs">
             <thead>
               <tr className="bg-gray-100">
