@@ -24,82 +24,81 @@ export async function POST(request: NextRequest) {
   let totalGenerated = 0
 
   for (const sched of schedules) {
-    // Tentukan titik mulai:
-    // - Jika sudah pernah di-generate, mulai dari hari SETELAH last_generated
-    // - Jika belum pernah, mulai dari start_date
-    // - Tidak boleh lebih awal dari start_date
-    const afterLastGen = sched.last_generated
-      ? nextDayStr(sched.last_generated)
-      : sched.start_date
+    // Aturan generate:
+    // 1. Hanya generate untuk HARI INI saja (tidak backfill hari-hari yang terlewat)
+    // 2. Tidak boleh generate jika hari ini sudah pernah di-generate (last_generated === today)
+    // 3. Tidak boleh generate sebelum start_date
+    // 4. Tidak boleh generate setelah end_date
 
-    const fromStr = afterLastGen >= sched.start_date ? afterLastGen : sched.start_date
-    const from    = parseDate(fromStr)
-    const endDate = sched.end_date ? parseDate(sched.end_date) : null
+    // Sudah di-generate hari ini — skip
+    if (sched.last_generated === todayStr) continue
 
-    // Belum waktunya
-    if (from > today) continue
+    // Hari ini sebelum start_date — skip
+    if (todayStr < sched.start_date) continue
 
-    // Kumpulkan tanggal yang harus di-generate
-    const datesToGenerate: string[] = []
-    const cursor = new Date(from)
+    // Hari ini setelah end_date — skip
+    if (sched.end_date && todayStr > sched.end_date) continue
 
-    while (cursor <= today) {
-      if (endDate && cursor > endDate) break
-      if (shouldGenerate(sched, cursor)) {
-        datesToGenerate.push(toDateStr(cursor))
-      }
-      cursor.setDate(cursor.getDate() + 1)
+    // Cek apakah hari ini memenuhi pola frekuensi
+    if (!shouldGenerate(sched, today)) {
+      // Tandai sudah dicek hari ini agar tidak cek ulang
+      await supabase
+        .from('recurring_transactions')
+        .update({ last_generated: todayStr })
+        .eq('id', sched.id)
+      continue
     }
 
-    // Selalu update last_generated ke hari ini agar tidak generate ulang
-    await supabase
-      .from('recurring_transactions')
-      .update({ last_generated: todayStr })
-      .eq('id', sched.id)
+    const notePrefix = sched.note
+      ? '[Otomatis] ' + sched.note
+      : '[Transaksi Berulang]'
 
-    if (datesToGenerate.length === 0) continue
-
-    // Cek duplikat: ambil transaksi yang sudah ada untuk jadwal ini di tanggal-tanggal tsb
-    // Identifikasi via note prefix "[Otomatis]" + account_id + category_id + tanggal
-    const notePrefix = sched.note ? `[Otomatis] ${sched.note}` : '[Transaksi Berulang]'
-
+    // Cek duplikat untuk hari ini saja
     const { data: existing } = await supabase
       .from('transactions')
-      .select('transaction_date')
-      .eq('account_id',  sched.account_id)
-      .eq('category_id', sched.category_id)
-      .eq('amount',      sched.amount)
-      .eq('type',        sched.type)
-      .eq('note',        notePrefix)
-      .in('transaction_date', datesToGenerate)
+      .select('id')
+      .eq('account_id',       sched.account_id)
+      .eq('category_id',      sched.category_id)
+      .eq('amount',           sched.amount)
+      .eq('type',             sched.type)
+      .eq('note',             notePrefix)
+      .eq('transaction_date', todayStr)
+      .limit(1)
 
-    const existingDates = new Set((existing || []).map((t: { transaction_date: string }) => t.transaction_date))
+    if (existing && existing.length > 0) {
+      // Sudah ada — tandai last_generated dan skip insert
+      await supabase
+        .from('recurring_transactions')
+        .update({ last_generated: todayStr })
+        .eq('id', sched.id)
+      continue
+    }
 
-    // Filter hanya tanggal yang belum ada
-    const newDates = datesToGenerate.filter((d) => !existingDates.has(d))
-
-    if (newDates.length === 0) continue
-
-    const inserts = newDates.map((d) => ({
-      user_id:          user.id,
-      account_id:       sched.account_id,
-      category_id:      sched.category_id,
-      amount:           sched.amount,
-      type:             sched.type,
-      note:             notePrefix,
-      transaction_date: d,
-    }))
-
+    // Insert transaksi hari ini
     const { error: insertErr } = await supabase
       .from('transactions')
-      .insert(inserts)
+      .insert({
+        user_id:          user.id,
+        account_id:       sched.account_id,
+        category_id:      sched.category_id,
+        amount:           sched.amount,
+        type:             sched.type,
+        note:             notePrefix,
+        transaction_date: todayStr,
+      })
 
     if (insertErr) {
       console.error('Generate error for sched', sched.id, insertErr.message)
       continue
     }
 
-    totalGenerated += newDates.length
+    // Update last_generated setelah berhasil insert
+    await supabase
+      .from('recurring_transactions')
+      .update({ last_generated: todayStr })
+      .eq('id', sched.id)
+
+    totalGenerated++
   }
 
   return NextResponse.json({ generated: totalGenerated })
@@ -107,16 +106,6 @@ export async function POST(request: NextRequest) {
 
 function toDateStr(d: Date): string {
   return d.toISOString().slice(0, 10)
-}
-
-function parseDate(str: string): Date {
-  return new Date(str + 'T00:00:00')
-}
-
-function nextDayStr(dateStr: string): string {
-  const d = parseDate(dateStr)
-  d.setDate(d.getDate() + 1)
-  return toDateStr(d)
 }
 
 function shouldGenerate(
@@ -128,15 +117,18 @@ function shouldGenerate(
 
   switch (sched.frequency) {
     case 'daily':
+      // Setiap hari — selalu true
       return true
 
     case 'monthly': {
+      // Hanya di tanggal yang ditentukan tiap bulan
       if (!sched.day_of_month) return false
       const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
       return dom === Math.min(sched.day_of_month, daysInMonth)
     }
 
     case 'yearly': {
+      // Hanya di tanggal + bulan yang ditentukan tiap tahun
       if (!sched.day_of_month || !sched.month_of_year) return false
       if (moy !== sched.month_of_year) return false
       const daysInYearMonth = new Date(date.getFullYear(), moy, 0).getDate()
