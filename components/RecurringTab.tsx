@@ -228,7 +228,7 @@ export default function RecurringTab() {
       {/* ── Form tambah jadwal ────────────────────────────────────────── */}
       <AnimatedContent distance={32} duration={0.65} threshold={0.04} delay={0}>
         <SpotlightCard
-          spotlightColor="rgba(167,139,250,0.12)"
+          spotlightColor="rgba(167, 139, 250, 0.12)"
           className="stitched-card p-6 rounded-2xl"
           style={{ background: '#FFFFFF' }}
         >

@@ -318,7 +318,7 @@ export default function TransactionsPage() {
                   <Printer size={15} />
                   <span>Cetak</span>
                 </button>
-                <SpotlightCard spotlightColor="rgba(47,158,110,0.18)" className="rounded-lg overflow-hidden">
+                <SpotlightCard spotlightColor="rgba(47, 158, 110, 0.18)" className="rounded-lg overflow-hidden">
                   <button
                     onClick={handleExportExcel}
                     disabled={exportingExcel}
@@ -328,7 +328,7 @@ export default function TransactionsPage() {
                     <span>{exportingExcel ? 'Memuat...' : 'Excel'}</span>
                   </button>
                 </SpotlightCard>
-                <SpotlightCard spotlightColor="rgba(27,42,74,0.18)" className="rounded-lg overflow-hidden">
+                <SpotlightCard spotlightColor="rgba(27, 42, 74, 0.18)" className="rounded-lg overflow-hidden">
                   <button
                     onClick={handleExportWord}
                     disabled={exportingWord}
