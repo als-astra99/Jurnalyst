@@ -6,6 +6,7 @@ import AppNavbar from '@/components/AppNavbar'
 import SelectInput from '@/components/ui/SelectInput'
 import AnimatedContent from '@/components/reactbits/AnimatedContent'
 import FadeContent from '@/components/reactbits/FadeContent'
+import RecurringTab from '@/components/RecurringTab'
 import {
   Printer,
   FileXls,
@@ -18,7 +19,9 @@ import {
   ArrowDownRight,
   CaretLeft,
   CaretRight,
-  Warning
+  Warning,
+  RepeatOnce,
+  ListBullets,
 } from '@phosphor-icons/react'
 
 type Account = { id: string; name: string }
@@ -66,12 +69,17 @@ export default function TransactionsPage() {
   const [categories, setCategories] = useState<Category[]>([])
   const [allTransactions, setAllTransactions] = useState<Transaction[]>([])
 
+  // Tab: 'regular' | 'recurring'
+  const [activeTab, setActiveTab] = useState<'regular' | 'recurring'>('regular')
+
   const [accountId, setAccountId] = useState('')
   const [categoryId, setCategoryId] = useState('')
   const [amount, setAmount] = useState('')
   const [type, setType] = useState('expense')
   const [note, setNote] = useState('')
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
+  // Min date = hari ini, tidak boleh input tanggal lampau
+  const today = new Date().toISOString().slice(0, 10)
+  const [date, setDate] = useState(today)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [exportingWord, setExportingWord] = useState(false)
@@ -254,37 +262,86 @@ export default function TransactionsPage() {
             <div>
               <p className="page-header-eyebrow mb-1">Pencatatan</p>
               <h1 className="font-serif-heading text-2xl md:text-[1.85rem] font-bold leading-tight" style={{ color: '#1A1F2E' }}>
-                Riwayat Transaksi
+                {activeTab === 'regular' ? 'Riwayat Transaksi' : 'Transaksi Berulang'}
               </h1>
               <p className="text-sm mt-1.5" style={{ color: '#64748B' }}>
-                Catatan rinci pemasukan dan pengeluaran harian.
+                {activeTab === 'regular'
+                  ? 'Catatan rinci pemasukan dan pengeluaran harian.'
+                  : 'Jadwal otomatis: gaji, uang saku, cicilan, dan lainnya.'}
               </p>
             </div>
 
-            <div className="flex items-center gap-2 flex-wrap shrink-0">
-              <button onClick={handlePrint} className="btn-ghost">
-                <Printer size={15} />
-                <span>Cetak</span>
-              </button>
-              <button
-                onClick={handleExportExcel}
-                disabled={exportingExcel}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 text-[#2F9E6E] hover:bg-emerald-100 text-xs font-semibold transition-all disabled:opacity-50 hover:-translate-y-px"
-              >
-                <FileXls size={15} />
-                <span>{exportingExcel ? 'Memuat...' : 'Excel'}</span>
-              </button>
-              <button
-                onClick={handleExportWord}
-                disabled={exportingWord}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-50 border border-blue-200 text-[#1B2A4A] hover:bg-blue-100 text-xs font-semibold transition-all disabled:opacity-50 hover:-translate-y-px"
-              >
-                <FileDoc size={15} />
-                <span>{exportingWord ? 'Memuat...' : 'Word'}</span>
-              </button>
-            </div>
+            {activeTab === 'regular' && (
+              <div className="flex items-center gap-2 flex-wrap shrink-0">
+                <button onClick={handlePrint} className="btn-ghost">
+                  <Printer size={15} />
+                  <span>Cetak</span>
+                </button>
+                <button
+                  onClick={handleExportExcel}
+                  disabled={exportingExcel}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 text-[#2F9E6E] hover:bg-emerald-100 text-xs font-semibold transition-all disabled:opacity-50 hover:-translate-y-px"
+                >
+                  <FileXls size={15} />
+                  <span>{exportingExcel ? 'Memuat...' : 'Excel'}</span>
+                </button>
+                <button
+                  onClick={handleExportWord}
+                  disabled={exportingWord}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-50 border border-blue-200 text-[#1B2A4A] hover:bg-blue-100 text-xs font-semibold transition-all disabled:opacity-50 hover:-translate-y-px"
+                >
+                  <FileDoc size={15} />
+                  <span>{exportingWord ? 'Memuat...' : 'Word'}</span>
+                </button>
+              </div>
+            )}
           </div>
         </AnimatedContent>
+
+        {/* ── TAB SWITCHER ───────────────────────────────────── */}
+        <div
+          className="inline-flex p-1 rounded-xl gap-1 print:hidden"
+          style={{ background: '#F0EDE5', border: '1px solid #E8E4DC' }}
+        >
+          <button
+            onClick={() => setActiveTab('regular')}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-200"
+            style={activeTab === 'regular' ? {
+              background: 'linear-gradient(135deg, #0F1E36, #162848)',
+              color: '#FFFFFF',
+              boxShadow: '0 2px 8px rgba(15,30,54,0.25)',
+            } : {
+              background: 'transparent',
+              color: '#64748B',
+            }}
+          >
+            <ListBullets size={14} weight={activeTab === 'regular' ? 'fill' : 'regular'} />
+            <span>Transaksi Biasa</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('recurring')}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-200"
+            style={activeTab === 'recurring' ? {
+              background: 'linear-gradient(135deg, #3B1FA8, #5B3BD5)',
+              color: '#FFFFFF',
+              boxShadow: '0 2px 8px rgba(59,31,168,0.3)',
+            } : {
+              background: 'transparent',
+              color: '#64748B',
+            }}
+          >
+            <RepeatOnce size={14} weight={activeTab === 'recurring' ? 'fill' : 'regular'} />
+            <span>Transaksi Berulang</span>
+          </button>
+        </div>
+
+        {/* ── TAB: BERULANG ──────────────────────────────────── */}
+        {activeTab === 'recurring' && (
+          <RecurringTab />
+        )}
+
+        {/* ── TAB: BIASA ─────────────────────────────────────── */}
+        {activeTab === 'regular' && (<>
 
         {/* ── INPUT FORM ─────────────────────────────────────── */}
         <AnimatedContent distance={28} duration={0.65} delay={0.06} threshold={0.05} className="print:hidden">
@@ -357,10 +414,14 @@ export default function TransactionsPage() {
                     <input
                       type="date"
                       required
+                      min={today}
                       value={date}
                       onChange={(e) => setDate(e.target.value)}
                       className="form-input date-input-premium"
                     />
+                    <p className="text-[11px] text-slate-400 mt-1">
+                      Hanya tanggal hari ini dan ke depan yang diperbolehkan.
+                    </p>
                   </div>
 
                   <div>
@@ -665,6 +726,8 @@ export default function TransactionsPage() {
             </tfoot>
           </table>
         </div>
+
+        </>)} {/* end tab regular */}
 
       </div>
     </AppNavbar>
