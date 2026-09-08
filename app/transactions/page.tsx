@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -176,11 +176,11 @@ export default function TransactionsPage() {
 
   const handlePrint = () => window.print()
 
-  // ── Rekap helpers (dipakai oleh kedua export) ─────────────────────────
+  // -- Rekap helpers (dipakai oleh kedua export) -------------------------
   const buildSummaries = () => {
     const BULAN_NAMES = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
 
-    // Per dompet — dari SEMUA transaksi (bukan hanya periode)
+    // Per dompet � dari SEMUA transaksi (bukan hanya periode)
     const walletMap: Record<string, { name: string; income: number; expense: number }> = {}
     for (const t of allTransactions) {
       const name = t.accounts?.name || 'Tanpa Dompet'
@@ -213,7 +213,7 @@ export default function TransactionsPage() {
         .sort(([a],[b]) => a.localeCompare(b))
         .map(([ym, v]) => {
           const [yr, m] = ym.split('-')
-          return { label: ${BULAN_NAMES[parseInt(m)-1]} , income: v.income, expense: v.expense }
+          return { label: `${BULAN_NAMES[parseInt(m)-1]} ${yr}`, income: v.income, expense: v.expense }
         }),
       yearlySummary: Object.entries(yearMap)
         .sort(([a],[b]) => a.localeCompare(b))
@@ -304,7 +304,7 @@ export default function TransactionsPage() {
     <AppNavbar>
       <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-6 print:p-0">
 
-        {/* ── HEADER ─────────────────────────────────────────── */}
+        {/* -- HEADER ------------------------------------------- */}
         <AnimatedContent distance={28} duration={0.6} threshold={0.05} className="print:hidden">
           <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
             <div>
@@ -350,7 +350,7 @@ export default function TransactionsPage() {
           </div>
         </AnimatedContent>
 
-        {/* ── TAB SWITCHER ───────────────────────────────────── */}
+        {/* -- TAB SWITCHER ------------------------------------- */}
         <div
           className="inline-flex p-1 rounded-xl gap-1 print:hidden"
           style={{ background: '#F0EDE5', border: '1px solid #E8E4DC' }}
@@ -387,15 +387,15 @@ export default function TransactionsPage() {
           </button>
         </div>
 
-        {/* ── TAB: BERULANG ──────────────────────────────────── */}
+        {/* -- TAB: BERULANG ------------------------------------ */}
         {activeTab === 'recurring' && (
           <RecurringTab />
         )}
 
-        {/* ── TAB: BIASA ─────────────────────────────────────── */}
+        {/* -- TAB: BIASA --------------------------------------- */}
         {activeTab === 'regular' && (<>
 
-        {/* ── INPUT FORM ─────────────────────────────────────── */}
+        {/* -- INPUT FORM --------------------------------------- */}
         <AnimatedContent distance={28} duration={0.65} delay={0.06} threshold={0.05} className="print:hidden">
           <div className="stitched-card p-6 rounded-2xl">
             <h2 className="font-serif-heading text-sm font-bold mb-4 flex items-center gap-2.5 pb-3"
@@ -504,7 +504,7 @@ export default function TransactionsPage() {
           </div>
         </AnimatedContent>
 
-        {/* ── FILTER BAR ─────────────────────────────────────── */}
+        {/* -- FILTER BAR --------------------------------------- */}
         <FadeContent duration={500} delay={200} threshold={0.05} className="print:hidden">
           <div
             className="rounded-xl p-3 flex flex-col md:flex-row items-start md:items-center justify-between gap-3"
@@ -585,7 +585,7 @@ export default function TransactionsPage() {
         </div>
         </FadeContent>
 
-        {/* ── TRANSACTIONS LIST ──────────────────────────────── */}
+        {/* -- TRANSACTIONS LIST -------------------------------- */}
         <AnimatedContent distance={24} duration={0.65} delay={0.1} threshold={0.05} className="print:hidden">
           <div className="rounded-2xl overflow-hidden" style={{ background: '#FFFFFF', border: '1px solid #E8E4DC', boxShadow: '0 1px 4px rgba(26,31,46,0.04)' }}>
             <div
@@ -593,7 +593,7 @@ export default function TransactionsPage() {
               style={{ background: 'linear-gradient(to right, #FAFAF7, #F5F2EB)', borderBottom: '1px solid #EDE9E0' }}
             >
               <h2 className="font-serif-heading font-bold text-sm" style={{ color: '#1A1F2E' }}>
-                Periode —{' '}
+                Periode �{' '}
                 <span style={{ color: '#C9973A' }}>{periodLabel}</span>
               </h2>
               <span
@@ -666,7 +666,7 @@ export default function TransactionsPage() {
                               </p>
                               <p className="text-[11px] text-slate-400 truncate">
                                 <span className="font-medium text-slate-600">{t.accounts?.name || '-'}</span>
-                                {t.note && <span> · {t.note}</span>}
+                                {t.note && <span> � {t.note}</span>}
                               </p>
                             </div>
                           </div>
@@ -734,7 +734,7 @@ export default function TransactionsPage() {
 
         {/* PRINT TABLE */}
         <div className="hidden print:block space-y-4">
-          <h2 className="text-xl font-bold text-gray-900">Riwayat Transaksi — {periodLabel}</h2>
+          <h2 className="text-xl font-bold text-gray-900">Riwayat Transaksi � {periodLabel}</h2>
           <table className="w-full border-collapse text-xs">
             <thead>
               <tr className="bg-gray-100">
