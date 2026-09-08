@@ -171,9 +171,9 @@ export default function TransactionsPage() {
 
   const handlePrint = () => window.print()
 
-  // â"€â"€ Rekap helpers â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+  // ?"E?"E Rekap helpers ?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E
   const buildSummaries = () => {
-    // Per dompet â€" dari SEMUA transaksi
+    // Per dompet ?E" dari SEMUA transaksi
     const walletMap: Record<string, { name: string; income: number; expense: number }> = {}
     for (const t of allTransactions) {
       const name = t.accounts?.name || 'Tanpa Dompet'

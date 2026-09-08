@@ -136,7 +136,7 @@ export default function SelectInput({
             padding: '0.375rem',
           }}>
             {options.map((opt, idx) => {
-              // ── Group header — tidak bisa diklik ──────────────────
+              // ?"E?"E Group header ?E" tidak bisa diklik ?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E
               if (opt.isGroup) {
                 return (
                   <div
@@ -157,7 +157,7 @@ export default function SelectInput({
                 )
               }
 
-              // ── Item biasa ────────────────────────────────────────
+              // ?"E?"E Item biasa ?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E
               const isSelected = opt.value === value
               return (
                 <motion.button
@@ -261,7 +261,7 @@ export default function SelectInput({
         </motion.span>
       </button>
 
-      {/* Render dropdown via Portal — keluar dari semua overflow:hidden parent */}
+      {/* Render dropdown via Portal ?E" keluar dari semua overflow:hidden parent */}
       {mounted && createPortal(dropdownContent, document.body)}
     </div>
   )

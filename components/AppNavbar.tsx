@@ -32,30 +32,30 @@ interface AppNavbarProps {
 const SIDEBAR_EXPANDED = 256
 const SIDEBAR_COLLAPSED = 64
 
-// ── Warna aksen unik per nav item (sesuai tema navy/gold) ──────────────────
+// ?"E?"E Warna aksen unik per nav item (sesuai tema navy/gold) ?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E
 const mainNavColors = [
-  // Dashboard — gold warm
+  // Dashboard ?E" gold warm
   {
     activeBg:    'linear-gradient(135deg, rgba(201,151,58,0.28), rgba(232,180,85,0.18))',
     activeBorder:'rgba(201,151,58,0.45)',
     iconColor:   '#E8B455',
     dot:         '#E8B455',
   },
-  // Transaksi — teal/emerald
+  // Transaksi ?E" teal/emerald
   {
     activeBg:    'linear-gradient(135deg, rgba(47,158,110,0.28), rgba(52,211,153,0.15))',
     activeBorder:'rgba(47,158,110,0.45)',
     iconColor:   '#34D399',
     dot:         '#34D399',
   },
-  // Portfolio — sky blue
+  // Portfolio ?E" sky blue
   {
     activeBg:    'linear-gradient(135deg, rgba(56,189,248,0.22), rgba(14,165,233,0.14))',
     activeBorder:'rgba(56,189,248,0.4)',
     iconColor:   '#38BDF8',
     dot:         '#38BDF8',
   },
-  // Journal — rose/pink
+  // Journal ?E" rose/pink
   {
     activeBg:    'linear-gradient(135deg, rgba(251,113,133,0.22), rgba(244,63,94,0.14))',
     activeBorder:'rgba(251,113,133,0.4)',
@@ -65,15 +65,15 @@ const mainNavColors = [
 ]
 
 const secondaryNavColors = [
-  // Kelola Dompet — violet
+  // Kelola Dompet ?E" violet
   { iconColor: '#A78BFA', hoverBg: 'rgba(167,139,250,0.1)' },
-  // Kelola Kategori — amber
+  // Kelola Kategori ?E" amber
   { iconColor: '#FBB040', hoverBg: 'rgba(251,176,64,0.1)' },
-  // Daftar Aset — cyan
+  // Daftar Aset ?E" cyan
   { iconColor: '#22D3EE', hoverBg: 'rgba(34,211,238,0.1)' },
 ]
 
-// ── Animasi label per-karakter ─────────────────────────────────────────────
+// ?"E?"E Animasi label per-karakter ?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E
 const charContainerVariants = {
   visible: {
     opacity: 1,
@@ -161,7 +161,7 @@ export default function AppNavbar({ userEmail, userName, children }: AppNavbarPr
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-[#F5F4F0] text-[#1A1F2E]">
 
-      {/* ── DESKTOP SIDEBAR ──────────────────────────────────── */}
+      {/* ?"E?"E DESKTOP SIDEBAR ?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E */}
       <motion.aside
         initial={false}
         animate={{ width: collapsed ? SIDEBAR_COLLAPSED : SIDEBAR_EXPANDED }}
@@ -180,7 +180,7 @@ export default function AppNavbar({ userEmail, userName, children }: AppNavbarPr
         {/* Top gold accent line */}
         <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[#C9973A] to-transparent opacity-60" />
 
-        {/* ── Brand + Toggle ─────────────────────────────────── */}
+        {/* ?"E?"E Brand + Toggle ?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E */}
         <FadeContent duration={400} delay={0}>
           <div className="relative z-10 px-3 py-[1.125rem] border-b border-white/[0.07] flex items-center justify-between gap-2">
             <AnimatePresence initial={false}>
@@ -237,7 +237,7 @@ export default function AppNavbar({ userEmail, userName, children }: AppNavbarPr
           </div>
         </FadeContent>
 
-        {/* ── Navigation ─────────────────────────────────────── */}
+        {/* ?"E?"E Navigation ?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E */}
         <div className="relative z-10 flex-1 overflow-y-auto overflow-x-hidden px-2 py-5 space-y-6">
 
           {/* Main nav */}
@@ -376,7 +376,7 @@ export default function AppNavbar({ userEmail, userName, children }: AppNavbarPr
           </div>
         </div>
 
-        {/* ── User footer ────────────────────────────────────── */}
+        {/* ?"E?"E User footer ?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E */}
         <FadeContent duration={500} delay={700}>
           <div
             className="relative z-10 border-t border-white/[0.07] overflow-hidden"
@@ -450,7 +450,7 @@ export default function AppNavbar({ userEmail, userName, children }: AppNavbarPr
         </FadeContent>
       </motion.aside>
 
-      {/* ── MOBILE HEADER ────────────────────────────────────── */}
+      {/* ?"E?"E MOBILE HEADER ?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E */}
       <header
         className="md:hidden sticky top-0 z-40 text-white px-4 py-3 flex items-center justify-between"
         style={{
@@ -470,7 +470,7 @@ export default function AppNavbar({ userEmail, userName, children }: AppNavbarPr
         </button>
       </header>
 
-      {/* ── MOBILE SHEET ─────────────────────────────────────── */}
+      {/* ?"E?"E MOBILE SHEET ?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E */}
       {mobileMenuOpen && (
         <div
           className="md:hidden fixed inset-0 z-50 flex flex-col justify-end"
@@ -545,7 +545,7 @@ export default function AppNavbar({ userEmail, userName, children }: AppNavbarPr
         </div>
       )}
 
-      {/* ── MAIN CONTENT ─────────────────────────────────────── */}
+      {/* ?"E?"E MAIN CONTENT ?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E */}
       <motion.main
         initial={false}
         animate={{ paddingLeft: collapsed ? SIDEBAR_COLLAPSED : SIDEBAR_EXPANDED }}
@@ -555,12 +555,12 @@ export default function AppNavbar({ userEmail, userName, children }: AppNavbarPr
         {children}
       </motion.main>
 
-      {/* Mobile main — tanpa padding kiri */}
+      {/* Mobile main ?E" tanpa padding kiri */}
       <main className="flex-1 pb-20 md:pb-8 min-h-screen md:hidden">
         {children}
       </main>
 
-      {/* ── MOBILE BOTTOM NAV ────────────────────────────────── */}
+      {/* ?"E?"E MOBILE BOTTOM NAV ?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E */}
       <nav
         className="md:hidden fixed bottom-0 left-0 right-0 z-40 px-1 py-1 flex items-center justify-around"
         style={{

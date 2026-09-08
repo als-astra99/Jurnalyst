@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       ? nextDayStr(sched.last_generated)
       : sched.start_date
 
-    // SELALU ambil yang terbesar â€" tidak boleh generate sebelum start_date
+    // SELALU ambil yang terbesar ?E" tidak boleh generate sebelum start_date
     const fromStr = afterLastGen > sched.start_date ? afterLastGen : sched.start_date
 
     const from    = parseDate(fromStr)
