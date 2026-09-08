@@ -33,7 +33,7 @@ export default function DashboardClient({ userName, totalIncome, totalExpense, b
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-5">
 
-      {/* â”€â”€ WELCOME HEADER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* â"€â"€ WELCOME HEADER â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */}
       <AnimatedContent distance={28} duration={0.6} threshold={0.05}>
         <div className="welcome-card rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -55,7 +55,7 @@ export default function DashboardClient({ userName, totalIncome, totalExpense, b
         </div>
       </AnimatedContent>
 
-      {/* â”€â”€ SUMMARY CARDS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* â"€â"€ SUMMARY CARDS â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
         {/* Income Card */}
@@ -144,7 +144,7 @@ export default function DashboardClient({ userName, totalIncome, totalExpense, b
             <div className="mt-5">
               <p className="text-[11px] font-bold font-number-mono mb-0.5"
                  style={{ color: isPositive ? '#8090A8' : '#C0736C' }}>
-                {!isPositive && 'âˆ’'} Rp
+                {!isPositive && 'âˆ''} Rp
               </p>
               <p className="font-serif-heading text-2xl md:text-[1.75rem] font-bold font-number-mono leading-none"
                  style={{ color: isPositive ? '#0F1E36' : '#922B21' }}>
@@ -156,10 +156,10 @@ export default function DashboardClient({ userName, totalIncome, totalExpense, b
         </AnimatedContent>
 
       </div>
-      {/* â”€â”€ CHARTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* â"€â"€ CHARTS â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
-        {/* Pie Chart â€” kiri */}
+        {/* Pie Chart â€" kiri */}
         <AnimatedContent distance={28} duration={0.7} delay={0.1} threshold={0.05}>
           <div className="stitched-card p-6 h-full rounded-2xl">
             <div className="flex items-center gap-3 mb-4 pb-3" style={{ borderBottom: '1px solid #F0EDE5' }}>
@@ -177,7 +177,7 @@ export default function DashboardClient({ userName, totalIncome, totalExpense, b
           </div>
         </AnimatedContent>
 
-        {/* Area Chart â€” kanan */}
+        {/* Area Chart â€" kanan */}
         <AnimatedContent distance={28} duration={0.7} delay={0.18} threshold={0.05}>
           <div className="stitched-card p-6 h-full rounded-2xl">
             <div className="flex items-center gap-3 mb-4 pb-3" style={{ borderBottom: '1px solid #F0EDE5' }}>
@@ -202,7 +202,7 @@ export default function DashboardClient({ userName, totalIncome, totalExpense, b
 
       </div>
 
-      {/* â”€â”€ QUICK NAV CARDS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* â"€â"€ QUICK NAV CARDS â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */}
       <AnimatedContent distance={24} duration={0.65} delay={0.08} threshold={0.05}>
         <div
           className="rounded-2xl overflow-hidden relative"

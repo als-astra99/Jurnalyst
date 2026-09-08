@@ -32,7 +32,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col md:flex-row" style={{ background: '#F5F4F0' }}>
 
-      {/* â”€â”€ BRAND HERO â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* â"€â"€ BRAND HERO â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */}
       <div
         className="md:w-[52%] text-white flex flex-col justify-between relative overflow-hidden"
         style={{
@@ -49,7 +49,7 @@ export default function LoginPage() {
           }}
         />
 
-        {/* Gold gradient glow â€” top right */}
+        {/* Gold gradient glow â€" top right */}
         <div
           className="absolute -top-24 -right-24 w-72 h-72 rounded-full pointer-events-none"
           style={{
@@ -127,7 +127,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* â”€â”€ FORM SECTION â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* â"€â"€ FORM SECTION â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */}
       <div className="md:w-[48%] flex items-center justify-center p-6 md:p-12 lg:p-16">
         <AnimatedContent distance={28} duration={0.65} delay={0.15} threshold={0.05} className="w-full max-w-md">
           <div

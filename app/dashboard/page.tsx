@@ -46,7 +46,7 @@ export default async function DashboardPage() {
   })
   const pieData = Object.entries(expenseByCategory).map(([name, value]) => ({ name, value }))
 
-  // Bar chart data â€” last 6 months
+  // Bar chart data â€" last 6 months
   const monthlyMap: Record<string, { income: number; expense: number }> = {}
   trx.forEach((t) => {
     const month = t.transaction_date.slice(0, 7)
@@ -59,7 +59,7 @@ export default async function DashboardPage() {
     .slice(-6)
     .map(([month, val]) => ({ month, ...val }))
 
-  // Prioritas: profiles.full_name â†’ user_metadata.full_name â†’ email prefix
+  // Prioritas: profiles.full_name â†' user_metadata.full_name â†' email prefix
   const displayName =
     profile?.full_name ||
     (user.user_metadata?.full_name as string | undefined) ||

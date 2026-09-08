@@ -216,7 +216,7 @@ export default function JournalPage() {
                     const key = h.assets.symbol
                     if (!assetMap.has(key)) {
                       assetMap.set(key, {
-                        groupLabel: `${h.assets.name} â€” ${h.assets.symbol}`,
+                        groupLabel: `${h.assets.name} â€" ${h.assets.symbol}`,
                         items: [],
                       })
                     }
@@ -235,7 +235,7 @@ export default function JournalPage() {
                       grouped.push({
                         value: h.id,
                         label: `${h.quantity} unit @ Rp ${h.avg_buy_price.toLocaleString('id-ID')}`,
-                        sublabel: h.status === 'open' ? 'â— Terbuka' : 'â—‹ Ditutup',
+                        sublabel: h.status === 'open' ? 'â- Terbuka' : 'â-‹ Ditutup',
                       })
                     }
                   }
@@ -297,8 +297,8 @@ export default function JournalPage() {
                 onChange={setResult}
                 options={[
                   { value: 'ongoing',   label: 'Ongoing',   sublabel: 'Masih berjalan' },
-                  { value: 'win',       label: 'Win âœ“',     sublabel: 'Profit' },
-                  { value: 'loss',      label: 'Loss âœ—',    sublabel: 'Rugi' },
+                  { value: 'win',       label: 'Win âœ"',     sublabel: 'Profit' },
+                  { value: 'loss',      label: 'Loss âœ-',    sublabel: 'Rugi' },
                   { value: 'breakeven', label: 'Breakeven', sublabel: 'Impas' },
                 ]}
               />

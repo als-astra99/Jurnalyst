@@ -20,7 +20,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Jurnalyst â€” Personal Finance & Investment Journal",
+  title: "Jurnalyst â€" Personal Finance & Investment Journal",
   description: "Aplikasi pencatatan arus kas, pemantauan portofolio, dan jurnal evaluasi investasi.",
   icons: {
     icon: "/Logo_Jurnalyst.png",
