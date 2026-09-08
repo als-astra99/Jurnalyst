@@ -200,7 +200,6 @@ export default function DashboardClient({ userName, totalIncome, totalExpense, b
           </div>
         </AnimatedContent>
 
-      </div>imatedContent>
       </div>
 
       {/* ── QUICK NAV CARDS ────────────────────────────────── */}

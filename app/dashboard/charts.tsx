@@ -239,7 +239,11 @@ export function MonthlyBarChart({ data }: { data: MonthlyData[] }) {
     )
   }
 
-  const formatted = data.map((d) => ({ ...d, month: fmtMonth(d.month) }))
+  const formatted = data.map((d) => ({
+    ...d,
+    month: fmtMonth(d.month),
+    net: d.income - d.expense,
+  }))
   const maxVal = Math.max(...formatted.flatMap((d) => [d.income, d.expense]))
 
   return (
@@ -320,10 +324,10 @@ export function MonthlyBarChart({ data }: { data: MonthlyData[] }) {
           activeDot={{ r: 6, fill: '#FB7185', stroke: '#FFFFFF', strokeWidth: 2.5 }}
         />
 
-        {/* Line net (income - expense) */}
+        {/* Line net */}
         <Line
           type="monotone"
-          dataKey={(d) => d.income - d.expense}
+          dataKey="net"
           name="Net"
           stroke="#E8B455"
           strokeWidth={1.5}
