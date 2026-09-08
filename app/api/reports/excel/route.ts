@@ -1,4 +1,4 @@
-ï»¿import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import ExcelJS from 'exceljs'
 
 type WalletSummary = { name: string; income: number; expense: number }
@@ -42,11 +42,22 @@ function makeTitleRow(sh: ExcelJS.Worksheet, text: string, cols: number) {
 export async function POST(request: NextRequest) {
   const body = await request.json()
   const {
-    periodLabel, groups=[], totalIncome=0, totalExpense=0,
-    walletSummary=[] as WalletSummary[],
-    monthlySummary=[] as PeriodSummary[],
-    yearlySummary=[] as PeriodSummary[],
-  } = body
+    periodLabel = '',
+    groups = [],
+    totalIncome = 0,
+    totalExpense = 0,
+    walletSummary = [],
+    monthlySummary = [],
+    yearlySummary = [],
+  } = body as {
+    periodLabel: string
+    groups: any[]
+    totalIncome: number
+    totalExpense: number
+    walletSummary: WalletSummary[]
+    monthlySummary: PeriodSummary[]
+    yearlySummary: PeriodSummary[]
+  }
 
   const wb = new ExcelJS.Workbook()
   wb.creator = 'Jurnalyst'
@@ -56,7 +67,7 @@ export async function POST(request: NextRequest) {
   {
     const sh = wb.addWorksheet('Riwayat Transaksi', { views:[{state:'frozen',ySplit:2}] })
     sh.columns = [{width:13},{width:10},{width:20},{width:16},{width:14},{width:28},{width:18}]
-    makeTitleRow(sh, `Riwayat Transaksi Jurnalyst â€” ${periodLabel}`, 7)
+    makeTitleRow(sh, `Riwayat Transaksi Jurnalyst — ${periodLabel}`, 7)
     const hRow = sh.getRow(2)
     hRow.values = ['Tanggal','Hari','Kategori','Dompet','Jenis','Catatan','Jumlah']
     hRow.height = 22; hRow.eachCell(c => styleHeader(c))
@@ -88,7 +99,7 @@ export async function POST(request: NextRequest) {
   {
     const sh = wb.addWorksheet('Rekap per Dompet')
     sh.columns = [{width:28},{width:22},{width:22},{width:22}]
-    makeTitleRow(sh, `Rekap per Dompet â€” ${periodLabel}`, 4)
+    makeTitleRow(sh, `Rekap per Dompet — ${periodLabel}`, 4)
     const hRow = sh.getRow(2)
     hRow.values = ['Nama Dompet','Pemasukan','Pengeluaran','Sisa (Saldo)']
     hRow.height = 22; hRow.eachCell(c => styleHeader(c, GOLD))
@@ -118,7 +129,7 @@ export async function POST(request: NextRequest) {
   {
     const sh = wb.addWorksheet('Rekap per Bulan')
     sh.columns = [{width:22},{width:22},{width:22},{width:22}]
-    makeTitleRow(sh, 'Rekap per Bulan â€” Semua Periode', 4)
+    makeTitleRow(sh, 'Rekap per Bulan — Semua Periode', 4)
     const hRow=sh.getRow(2); hRow.values=['Bulan','Pemasukan','Pengeluaran','Saldo']; hRow.height=22; hRow.eachCell(c=>styleHeader(c))
     let ri=3
     for (const m of monthlySummary as PeriodSummary[]) {

@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell, WidthType, HeadingLevel, AlignmentType, ShadingType, BorderStyle } from 'docx'
 
 type WalletSummary = { name: string; income: number; expense: number }
@@ -32,10 +32,23 @@ function divider() {
 
 export async function POST(request: NextRequest) {
   const body = await request.json()
-  const { periodLabel, groups=[], totalIncome=0, totalExpense=0,
-    walletSummary=[] as WalletSummary[],
-    monthlySummary=[] as PeriodSummary[],
-    yearlySummary=[] as PeriodSummary[] } = body
+  const {
+    periodLabel = '',
+    groups = [],
+    totalIncome = 0,
+    totalExpense = 0,
+    walletSummary = [],
+    monthlySummary = [],
+    yearlySummary = [],
+  } = body as {
+    periodLabel: string
+    groups: any[]
+    totalIncome: number
+    totalExpense: number
+    walletSummary: WalletSummary[]
+    monthlySummary: PeriodSummary[]
+    yearlySummary: PeriodSummary[]
+  }
 
   const HEADER_BG = 'DBEAFE'
   const GOLD_BG   = 'FEF3C7'
