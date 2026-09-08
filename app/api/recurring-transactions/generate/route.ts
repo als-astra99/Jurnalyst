@@ -24,20 +24,22 @@ export async function POST(request: NextRequest) {
   let totalGenerated = 0
 
   for (const sched of schedules) {
-    // Kandidat titik mulai: hari setelah last_generated ATAU start_date
+    // Tentukan titik mulai:
+    // - Jika sudah pernah di-generate, mulai dari hari SETELAH last_generated
+    // - Jika belum pernah, mulai dari start_date
+    // - Tidak boleh lebih awal dari start_date
     const afterLastGen = sched.last_generated
       ? nextDayStr(sched.last_generated)
       : sched.start_date
 
-    // SELALU ambil yang terbesar ?E" tidak boleh generate sebelum start_date
-    const fromStr = afterLastGen > sched.start_date ? afterLastGen : sched.start_date
-
+    const fromStr = afterLastGen >= sched.start_date ? afterLastGen : sched.start_date
     const from    = parseDate(fromStr)
     const endDate = sched.end_date ? parseDate(sched.end_date) : null
 
-    // Belum waktunya sama sekali
+    // Belum waktunya
     if (from > today) continue
 
+    // Kumpulkan tanggal yang harus di-generate
     const datesToGenerate: string[] = []
     const cursor = new Date(from)
 
@@ -49,21 +51,42 @@ export async function POST(request: NextRequest) {
       cursor.setDate(cursor.getDate() + 1)
     }
 
-    if (datesToGenerate.length === 0) {
-      await supabase
-        .from('recurring_transactions')
-        .update({ last_generated: todayStr })
-        .eq('id', sched.id)
-      continue
-    }
+    // Selalu update last_generated ke hari ini agar tidak generate ulang
+    await supabase
+      .from('recurring_transactions')
+      .update({ last_generated: todayStr })
+      .eq('id', sched.id)
 
-    const inserts = datesToGenerate.map((d) => ({
+    if (datesToGenerate.length === 0) continue
+
+    // Cek duplikat: ambil transaksi yang sudah ada untuk jadwal ini di tanggal-tanggal tsb
+    // Identifikasi via note prefix "[Otomatis]" + account_id + category_id + tanggal
+    const notePrefix = sched.note ? `[Otomatis] ${sched.note}` : '[Transaksi Berulang]'
+
+    const { data: existing } = await supabase
+      .from('transactions')
+      .select('transaction_date')
+      .eq('account_id',  sched.account_id)
+      .eq('category_id', sched.category_id)
+      .eq('amount',      sched.amount)
+      .eq('type',        sched.type)
+      .eq('note',        notePrefix)
+      .in('transaction_date', datesToGenerate)
+
+    const existingDates = new Set((existing || []).map((t: { transaction_date: string }) => t.transaction_date))
+
+    // Filter hanya tanggal yang belum ada
+    const newDates = datesToGenerate.filter((d) => !existingDates.has(d))
+
+    if (newDates.length === 0) continue
+
+    const inserts = newDates.map((d) => ({
       user_id:          user.id,
       account_id:       sched.account_id,
       category_id:      sched.category_id,
       amount:           sched.amount,
       type:             sched.type,
-      note:             sched.note ? `[Otomatis] ${sched.note}` : '[Transaksi Berulang]',
+      note:             notePrefix,
       transaction_date: d,
     }))
 
@@ -76,12 +99,7 @@ export async function POST(request: NextRequest) {
       continue
     }
 
-    totalGenerated += datesToGenerate.length
-
-    await supabase
-      .from('recurring_transactions')
-      .update({ last_generated: todayStr })
-      .eq('id', sched.id)
+    totalGenerated += newDates.length
   }
 
   return NextResponse.json({ generated: totalGenerated })
