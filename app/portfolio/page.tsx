@@ -219,7 +219,7 @@ export default function PortfolioPage() {
               </span>
               <div className="mt-4">
                 <p className="text-[11px] font-bold font-number-mono mb-0.5" style={{ color: totalPnL >= 0 ? '#2F9E6E' : '#D14343' }}>
-                  {totalPnL >= 0 ? '+Rp' : '??'Rp'}
+                  {totalPnL >= 0 ? '+Rp' : '-Rp'}
                 </p>
                 <p className={`font-serif-heading text-2xl md:text-[1.75rem] font-bold font-number-mono leading-none ${totalPnL >= 0 ? 'text-[#2F9E6E]' : 'text-[#D14343]'}`}>
                   {Math.abs(totalPnL).toLocaleString('id-ID')}

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import { getTokenFromRequest, createApiClient } from '@/lib/supabase/api'
 
 export async function POST(request: NextRequest) {
@@ -30,13 +30,13 @@ export async function POST(request: NextRequest) {
     // 3. Tidak boleh generate sebelum start_date
     // 4. Tidak boleh generate setelah end_date
 
-    // Sudah di-generate hari ini — skip
+    // Sudah di-generate hari ini - skip
     if (sched.last_generated === todayStr) continue
 
-    // Hari ini sebelum start_date — skip
+    // Hari ini sebelum start_date - skip
     if (todayStr < sched.start_date) continue
 
-    // Hari ini setelah end_date — skip
+    // Hari ini setelah end_date - skip
     if (sched.end_date && todayStr > sched.end_date) continue
 
     // Cek apakah hari ini memenuhi pola frekuensi
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
       .limit(1)
 
     if (existing && existing.length > 0) {
-      // Sudah ada — tandai last_generated dan skip insert
+      // Sudah ada - tandai last_generated dan skip insert
       await supabase
         .from('recurring_transactions')
         .update({ last_generated: todayStr })
@@ -117,7 +117,7 @@ function shouldGenerate(
 
   switch (sched.frequency) {
     case 'daily':
-      // Setiap hari — selalu true
+      // Setiap hari - selalu true
       return true
 
     case 'monthly': {

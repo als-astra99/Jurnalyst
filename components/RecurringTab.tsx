@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -267,7 +267,7 @@ export default function RecurringTab() {
           ) : (
             <form onSubmit={handleAdd} className="space-y-5">
 
-              {/* Grid fields — stagger setiap field */}
+              {/* Grid fields - stagger setiap field */}
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 <StaggeredMenu staggerDelay={0.06} initialDelay={0.15}>
 
@@ -277,7 +277,7 @@ export default function RecurringTab() {
                     value={type}
                     onChange={setType}
                     options={[
-                      { value: 'expense', label: 'Pengeluaran (−)', sublabel: 'Uang keluar' },
+                      { value: 'expense', label: 'Pengeluaran (-)', sublabel: 'Uang keluar' },
                       { value: 'income',  label: 'Pemasukan (+)',   sublabel: 'Uang masuk'  },
                     ] as SelectOption[]}
                   />
@@ -343,7 +343,7 @@ export default function RecurringTab() {
                 </StaggeredMenu>
               </div>
 
-              {/* Field kondisional — slide+fade saat frekuensi berubah */}
+              {/* Field kondisional - slide+fade saat frekuensi berubah */}
               <AnimatePresence mode="popLayout">
                 {(frequency === 'monthly' || frequency === 'yearly') && (
                   <motion.div
@@ -418,7 +418,7 @@ export default function RecurringTab() {
                 </StaggeredMenu>
               </div>
 
-              {/* Preview label — FadeContent */}
+              {/* Preview label - FadeContent */}
               <FadeContent duration={300} delay={0} threshold={0.01}>
                 <motion.div
                   key={`${type}-${frequency}-${amount}-${dayOfMonth}-${monthOfYear}`}
