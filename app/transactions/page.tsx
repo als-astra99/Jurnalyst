@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -7,6 +7,7 @@ import SelectInput from '@/components/ui/SelectInput'
 import AnimatedContent from '@/components/reactbits/AnimatedContent'
 import FadeContent from '@/components/reactbits/FadeContent'
 import RecurringTab from '@/components/RecurringTab'
+import SpotlightCard from '@/components/reactbits/SpotlightCard'
 import {
   Printer,
   FileXls,
@@ -175,6 +176,51 @@ export default function TransactionsPage() {
 
   const handlePrint = () => window.print()
 
+  // ── Rekap helpers (dipakai oleh kedua export) ─────────────────────────
+  const buildSummaries = () => {
+    const BULAN_NAMES = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
+
+    // Per dompet — dari SEMUA transaksi (bukan hanya periode)
+    const walletMap: Record<string, { name: string; income: number; expense: number }> = {}
+    for (const t of allTransactions) {
+      const name = t.accounts?.name || 'Tanpa Dompet'
+      if (!walletMap[name]) walletMap[name] = { name, income: 0, expense: 0 }
+      if (t.type === 'income') walletMap[name].income += Number(t.amount)
+      else walletMap[name].expense += Number(t.amount)
+    }
+
+    // Per bulan
+    const monthMap: Record<string, { income: number; expense: number }> = {}
+    for (const t of allTransactions) {
+      const ym = t.transaction_date.slice(0, 7)
+      if (!monthMap[ym]) monthMap[ym] = { income: 0, expense: 0 }
+      if (t.type === 'income') monthMap[ym].income += Number(t.amount)
+      else monthMap[ym].expense += Number(t.amount)
+    }
+
+    // Per tahun
+    const yearMap: Record<string, { income: number; expense: number }> = {}
+    for (const t of allTransactions) {
+      const y = t.transaction_date.slice(0, 4)
+      if (!yearMap[y]) yearMap[y] = { income: 0, expense: 0 }
+      if (t.type === 'income') yearMap[y].income += Number(t.amount)
+      else yearMap[y].expense += Number(t.amount)
+    }
+
+    return {
+      walletSummary: Object.values(walletMap),
+      monthlySummary: Object.entries(monthMap)
+        .sort(([a],[b]) => a.localeCompare(b))
+        .map(([ym, v]) => {
+          const [yr, m] = ym.split('-')
+          return { label: ${BULAN_NAMES[parseInt(m)-1]} , income: v.income, expense: v.expense }
+        }),
+      yearlySummary: Object.entries(yearMap)
+        .sort(([a],[b]) => a.localeCompare(b))
+        .map(([yr, v]) => ({ label: yr, income: v.income, expense: v.expense })),
+    }
+  }
+
   const handleExportExcel = async () => {
     setExportingExcel(true)
     try {
@@ -195,6 +241,7 @@ export default function TransactionsPage() {
           })),
           totalIncome,
           totalExpense,
+          ...buildSummaries(),
         }),
       })
 
@@ -234,6 +281,7 @@ export default function TransactionsPage() {
           })),
           totalIncome,
           totalExpense,
+          ...buildSummaries(),
         }),
       })
 
@@ -277,22 +325,26 @@ export default function TransactionsPage() {
                   <Printer size={15} />
                   <span>Cetak</span>
                 </button>
-                <button
-                  onClick={handleExportExcel}
-                  disabled={exportingExcel}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 text-[#2F9E6E] hover:bg-emerald-100 text-xs font-semibold transition-all disabled:opacity-50 hover:-translate-y-px"
-                >
-                  <FileXls size={15} />
-                  <span>{exportingExcel ? 'Memuat...' : 'Excel'}</span>
-                </button>
-                <button
-                  onClick={handleExportWord}
-                  disabled={exportingWord}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-50 border border-blue-200 text-[#1B2A4A] hover:bg-blue-100 text-xs font-semibold transition-all disabled:opacity-50 hover:-translate-y-px"
-                >
-                  <FileDoc size={15} />
-                  <span>{exportingWord ? 'Memuat...' : 'Word'}</span>
-                </button>
+                <SpotlightCard spotlightColor="rgba(47,158,110,0.18)" className="rounded-lg overflow-hidden">
+                  <button
+                    onClick={handleExportExcel}
+                    disabled={exportingExcel}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 text-[#2F9E6E] hover:bg-emerald-100 text-xs font-semibold transition-all disabled:opacity-50 hover:-translate-y-px"
+                  >
+                    <FileXls size={15} />
+                    <span>{exportingExcel ? 'Memuat...' : 'Excel'}</span>
+                  </button>
+                </SpotlightCard>
+                <SpotlightCard spotlightColor="rgba(27,42,74,0.18)" className="rounded-lg overflow-hidden">
+                  <button
+                    onClick={handleExportWord}
+                    disabled={exportingWord}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-50 border border-blue-200 text-[#1B2A4A] hover:bg-blue-100 text-xs font-semibold transition-all disabled:opacity-50 hover:-translate-y-px"
+                  >
+                    <FileDoc size={15} />
+                    <span>{exportingWord ? 'Memuat...' : 'Word'}</span>
+                  </button>
+                </SpotlightCard>
               </div>
             )}
           </div>

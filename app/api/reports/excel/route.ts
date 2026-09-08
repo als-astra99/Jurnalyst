@@ -1,112 +1,160 @@
-import { NextRequest, NextResponse } from 'next/server'
+﻿import { NextRequest, NextResponse } from 'next/server'
 import ExcelJS from 'exceljs'
 
-function formatRupiahNum(v: number) {
-  return v
+type WalletSummary = { name: string; income: number; expense: number }
+type PeriodSummary = { label: string; income: number; expense: number }
+
+const HARI   = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu']
+const NAVY   = 'FF0F1E36'
+const GOLD   = 'FFC9973A'
+const GREEN  = 'FF059669'
+const RED    = 'FFDC2626'
+const WHITE  = 'FFFFFFFF'
+const LIGHT  = 'FFF9F6EF'
+const LIGHT2 = 'FFFEF7EC'
+
+function borders(): ExcelJS.Borders {
+  const s: ExcelJS.BorderStyle = 'thin'
+  return { top:{style:s,color:{argb:'FFE5E7EB'}}, bottom:{style:s,color:{argb:'FFE5E7EB'}}, left:{style:s,color:{argb:'FFE5E7EB'}}, right:{style:s,color:{argb:'FFE5E7EB'}} }
+}
+function styleHeader(cell: ExcelJS.Cell, bg = NAVY) {
+  cell.font  = { bold: true, color: { argb: WHITE }, size: 10 }
+  cell.fill  = { type: 'pattern', pattern: 'solid', fgColor: { argb: bg } }
+  cell.alignment = { horizontal: 'center', vertical: 'middle' }
+  cell.border = borders()
+}
+function rupiahCell(cell: ExcelJS.Cell, value: number, color?: string) {
+  cell.value  = value
+  cell.numFmt = '"Rp" #,##0'
+  cell.alignment = { horizontal: 'right', vertical: 'middle' }
+  cell.border = borders()
+  if (color) cell.font = { bold: true, color: { argb: color } }
+}
+function makeTitleRow(sh: ExcelJS.Worksheet, text: string, cols: number) {
+  sh.mergeCells('A1:' + String.fromCharCode(64 + cols) + '1')
+  const c = sh.getCell('A1')
+  c.value = text
+  c.font  = { bold: true, size: 13, color: { argb: NAVY } }
+  c.alignment = { horizontal: 'left', vertical: 'middle' }
+  sh.getRow(1).height = 26
 }
 
 export async function POST(request: NextRequest) {
   const body = await request.json()
-  const { periodLabel, groups, totalIncome, totalExpense } = body
+  const {
+    periodLabel, groups=[], totalIncome=0, totalExpense=0,
+    walletSummary=[] as WalletSummary[],
+    monthlySummary=[] as PeriodSummary[],
+    yearlySummary=[] as PeriodSummary[],
+  } = body
 
-  const workbook = new ExcelJS.Workbook()
-  workbook.creator = 'Jurnalyst'
-  const sheet = workbook.addWorksheet('Riwayat Transaksi', {
-    views: [{ state: 'frozen', ySplit: 2 }],
-  })
+  const wb = new ExcelJS.Workbook()
+  wb.creator = 'Jurnalyst'
+  wb.created = new Date()
 
-  // Kolom — tanpa header otomatis (kita tulis manual)
-  sheet.columns = [
-    { key: 'tanggal', width: 14 },
-    { key: 'hari', width: 10 },
-    { key: 'kategori', width: 18 },
-    { key: 'dompet', width: 14 },
-    { key: 'jenis', width: 14 },
-    { key: 'catatan', width: 26 },
-    { key: 'jumlah', width: 16 },
-  ]
-
-  // ===== Baris 1: Judul =====
-  sheet.mergeCells('A1:G1')
-  const titleCell = sheet.getCell('A1')
-  titleCell.value = `Riwayat Transaksi Jurnalyst — ${periodLabel}`
-  titleCell.font = { bold: true, size: 14, color: { argb: 'FF1D4ED8' } }
-  titleCell.alignment = { horizontal: 'left', vertical: 'middle' }
-  sheet.getRow(1).height = 26
-
-  // ===== Baris 2: Header =====
-  const headerRow = sheet.getRow(2)
-  headerRow.values = ['Tanggal', 'Hari', 'Kategori', 'Dompet', 'Jenis', 'Catatan', 'Jumlah']
-  headerRow.eachCell((cell) => {
-    cell.font = { bold: true, color: { argb: 'FFFFFFFF' } }
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2563EB' } }
-    cell.alignment = { horizontal: 'center', vertical: 'middle' }
-    cell.border = {
-      top: { style: 'thin' }, bottom: { style: 'thin' },
-      left: { style: 'thin' }, right: { style: 'thin' },
-    }
-  })
-  headerRow.height = 20
-
-  const HARI = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
-
-  let rowIndex = 3
-  for (const g of groups) {
-    for (const item of g.items) {
-      const row = sheet.getRow(rowIndex)
-      const hariNama = HARI[new Date(g.date + 'T00:00:00').getDay()]
-      row.values = [g.date, hariNama, item.kategori, item.dompet, item.jenis, item.catatan || '-', item.jumlah]
-
-      row.eachCell((cell, colNumber) => {
-        cell.border = {
-          top: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-          bottom: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-          left: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-          right: { style: 'thin', color: { argb: 'FFE5E7EB' } },
-        }
-        if (colNumber === 7) {
-          cell.numFmt = '"Rp" #,##0'
-          cell.font = { color: { argb: item.jenis === 'Pemasukan' ? 'FF059669' : 'FFDC2626' }, bold: true }
-          cell.alignment = { horizontal: 'right' }
-        }
-      })
-
-      // warna selang-seling per baris supaya mudah dibaca
-      if (rowIndex % 2 === 0) {
-        row.eachCell((cell) => {
-          if (!cell.fill || cell.fill.type !== 'pattern') {
-            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF9FAFB' } }
-          }
+  // Sheet 1: Riwayat Transaksi
+  {
+    const sh = wb.addWorksheet('Riwayat Transaksi', { views:[{state:'frozen',ySplit:2}] })
+    sh.columns = [{width:13},{width:10},{width:20},{width:16},{width:14},{width:28},{width:18}]
+    makeTitleRow(sh, `Riwayat Transaksi Jurnalyst — ${periodLabel}`, 7)
+    const hRow = sh.getRow(2)
+    hRow.values = ['Tanggal','Hari','Kategori','Dompet','Jenis','Catatan','Jumlah']
+    hRow.height = 22; hRow.eachCell(c => styleHeader(c))
+    let ri = 3
+    for (const g of groups) {
+      for (const item of g.items) {
+        const row  = sh.getRow(ri)
+        const hari = HARI[new Date(g.date + 'T00:00:00').getDay()]
+        row.values = [g.date, hari, item.kategori, item.dompet, item.jenis, item.catatan||'-', item.jumlah]
+        row.eachCell((c, col) => {
+          c.border = borders(); c.alignment = { vertical: 'middle' }
+          if (col === 7) { c.numFmt='"Rp" #,##0'; c.font={color:{argb:item.jenis==='Pemasukan'?GREEN:RED},bold:true}; c.alignment={horizontal:'right',vertical:'middle'} }
+          if (ri%2===0 && col!==7) c.fill={type:'pattern',pattern:'solid',fgColor:{argb:LIGHT}}
         })
+        ri++
       }
+    }
+    ri++
+    const addTot = (label: string, val: number, color: string) => {
+      sh.getCell(ri,5).value=label; sh.getCell(ri,5).font={bold:true,size:10}
+      rupiahCell(sh.getCell(ri,7), val, color); ri++
+    }
+    addTot('TOTAL PEMASUKAN',   totalIncome,             GREEN)
+    addTot('TOTAL PENGELUARAN', totalExpense,             RED)
+    addTot('SALDO',             totalIncome-totalExpense, NAVY)
+  }
 
-      rowIndex++
+  // Sheet 2: Rekap per Dompet
+  {
+    const sh = wb.addWorksheet('Rekap per Dompet')
+    sh.columns = [{width:28},{width:22},{width:22},{width:22}]
+    makeTitleRow(sh, `Rekap per Dompet — ${periodLabel}`, 4)
+    const hRow = sh.getRow(2)
+    hRow.values = ['Nama Dompet','Pemasukan','Pengeluaran','Sisa (Saldo)']
+    hRow.height = 22; hRow.eachCell(c => styleHeader(c, GOLD))
+    let ri=3, gInc=0, gExp=0
+    for (const w of walletSummary as WalletSummary[]) {
+      const sisa=w.income-w.expense; gInc+=w.income; gExp+=w.expense
+      const row=sh.getRow(ri)
+      row.getCell(1).value=w.name; row.getCell(1).border=borders(); row.getCell(1).alignment={vertical:'middle'}
+      if (ri%2===0) row.getCell(1).fill={type:'pattern',pattern:'solid',fgColor:{argb:LIGHT2}}
+      rupiahCell(row.getCell(2),w.income,GREEN)
+      rupiahCell(row.getCell(3),w.expense,RED)
+      rupiahCell(row.getCell(4),sisa,sisa>=0?GREEN:RED)
+      ri++
+    }
+    ri++
+    const totRow=sh.getRow(ri)
+    for (let c=1;c<=4;c++){totRow.getCell(c).fill={type:'pattern',pattern:'solid',fgColor:{argb:NAVY}};totRow.getCell(c).font={bold:true,color:{argb:WHITE}};totRow.getCell(c).border=borders()}
+    totRow.getCell(1).value='TOTAL SEMUA DOMPET'; totRow.getCell(1).alignment={vertical:'middle'}
+    rupiahCell(totRow.getCell(2),gInc,GREEN)
+    rupiahCell(totRow.getCell(3),gExp,RED)
+    rupiahCell(totRow.getCell(4),gInc-gExp,gInc-gExp>=0?GREEN:RED)
+    for (let c=1;c<=4;c++) totRow.getCell(c).font={bold:true,color:{argb:WHITE}}
+    totRow.height=22
+  }
+
+  // Sheet 3: Rekap per Bulan
+  {
+    const sh = wb.addWorksheet('Rekap per Bulan')
+    sh.columns = [{width:22},{width:22},{width:22},{width:22}]
+    makeTitleRow(sh, 'Rekap per Bulan — Semua Periode', 4)
+    const hRow=sh.getRow(2); hRow.values=['Bulan','Pemasukan','Pengeluaran','Saldo']; hRow.height=22; hRow.eachCell(c=>styleHeader(c))
+    let ri=3
+    for (const m of monthlySummary as PeriodSummary[]) {
+      const saldo=m.income-m.expense; const row=sh.getRow(ri)
+      row.getCell(1).value=m.label; row.getCell(1).border=borders(); row.getCell(1).alignment={vertical:'middle'}
+      if (ri%2===0) row.getCell(1).fill={type:'pattern',pattern:'solid',fgColor:{argb:LIGHT}}
+      rupiahCell(row.getCell(2),m.income,GREEN)
+      rupiahCell(row.getCell(3),m.expense,RED)
+      rupiahCell(row.getCell(4),saldo,saldo>=0?GREEN:RED)
+      ri++
     }
   }
 
-  // ===== Baris total =====
-  rowIndex += 1
-  const addTotalRow = (label: string, value: number, color: string) => {
-    const row = sheet.getRow(rowIndex)
-    row.getCell(5).value = label
-    row.getCell(5).font = { bold: true }
-    row.getCell(7).value = value
-    row.getCell(7).numFmt = '"Rp" #,##0'
-    row.getCell(7).font = { bold: true, color: { argb: color } }
-    row.getCell(7).alignment = { horizontal: 'right' }
-    rowIndex++
+  // Sheet 4: Rekap per Tahun
+  {
+    const sh = wb.addWorksheet('Rekap per Tahun')
+    sh.columns = [{width:16},{width:22},{width:22},{width:22}]
+    makeTitleRow(sh, 'Rekap per Tahun', 4)
+    const hRow=sh.getRow(2); hRow.values=['Tahun','Pemasukan','Pengeluaran','Saldo']; hRow.height=22; hRow.eachCell(c=>styleHeader(c))
+    let ri=3
+    for (const y of yearlySummary as PeriodSummary[]) {
+      const saldo=y.income-y.expense; const row=sh.getRow(ri)
+      row.getCell(1).value=y.label; row.getCell(1).border=borders(); row.getCell(1).alignment={vertical:'middle'}
+      if (ri%2===0) row.getCell(1).fill={type:'pattern',pattern:'solid',fgColor:{argb:LIGHT}}
+      rupiahCell(row.getCell(2),y.income,GREEN)
+      rupiahCell(row.getCell(3),y.expense,RED)
+      rupiahCell(row.getCell(4),saldo,saldo>=0?GREEN:RED)
+      ri++
+    }
   }
 
-  addTotalRow('TOTAL PEMASUKAN', totalIncome, 'FF059669')
-  addTotalRow('TOTAL PENGELUARAN', totalExpense, 'FFDC2626')
-  addTotalRow('SALDO', totalIncome - totalExpense, 'FF111827')
-
-  const buffer = await workbook.xlsx.writeBuffer()
-
+  const buffer = await wb.xlsx.writeBuffer()
   return new NextResponse(buffer, {
     headers: {
       'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'Content-Disposition': `attachment; filename="Riwayat-Transaksi.xlsx"`,
+      'Content-Disposition': `attachment; filename="Laporan-Jurnalyst-${String(periodLabel).replace(/\s+/g,'-')}.xlsx"`,
     },
   })
 }
