@@ -1,4 +1,3 @@
-
 'use client'
 
 import { ExpensePieChart, MonthlyBarChart } from './charts'
@@ -27,19 +26,28 @@ type Props = {
   monthlyData: { month: string; income: number; expense: number }[]
 }
 
-export default function DashboardClient({ userName, totalIncome, totalExpense, balance, pieData, monthlyData }: Props) {
+export default function DashboardClient({
+  userName,
+  totalIncome,
+  totalExpense,
+  balance,
+  pieData,
+  monthlyData,
+}: Props) {
   const isPositive = balance >= 0
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-5">
 
-      {/* ?"E?"E WELCOME HEADER ?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E */}
+      {/* WELCOME HEADER */}
       <AnimatedContent distance={28} duration={0.6} threshold={0.05}>
         <div className="welcome-card rounded-2xl p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <p className="page-header-eyebrow mb-1.5">Ringkasan Akun</p>
-            <h1 className="font-serif-heading text-2xl md:text-[1.85rem] font-bold leading-tight"
-                style={{ color: '#1A1F2E' }}>
+            <h1
+              className="font-serif-heading text-2xl md:text-[1.85rem] font-bold leading-tight"
+              style={{ color: '#1A1F2E' }}
+            >
               Selamat Datang, {userName}
             </h1>
             <p className="text-sm mt-1.5 leading-relaxed" style={{ color: '#64748B' }}>
@@ -55,32 +63,29 @@ export default function DashboardClient({ userName, totalIncome, totalExpense, b
         </div>
       </AnimatedContent>
 
-      {/* ?"E?"E SUMMARY CARDS ?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E */}
+      {/* SUMMARY CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 
         {/* Income Card */}
         <AnimatedContent distance={36} duration={0.65} delay={0.05} threshold={0.05}>
           <div className="stitched-card card-income p-5 flex flex-col justify-between h-full rounded-2xl">
             <div className="flex items-start justify-between">
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-wider mb-0.5" style={{ color: '#1A7A54' }}>
-                  Total Pemasukan
-                </p>
-              </div>
+              <p className="text-[11px] font-bold uppercase tracking-wider mb-0.5" style={{ color: '#1A7A54' }}>
+                Total Pemasukan
+              </p>
               <div
                 className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                style={{
-                  background: 'linear-gradient(135deg, #C8F0DC, #A8E5C4)',
-                  color: '#145C3E',
-                }}
+                style={{ background: 'linear-gradient(135deg, #C8F0DC, #A8E5C4)', color: '#145C3E' }}
               >
                 <TrendUp size={17} weight="bold" />
               </div>
             </div>
             <div className="mt-5">
               <p className="text-[11px] font-bold font-number-mono mb-0.5" style={{ color: '#5A9E7A' }}>Rp</p>
-              <p className="font-serif-heading text-2xl md:text-[1.75rem] font-bold font-number-mono leading-none"
-                 style={{ color: '#145C3E' }}>
+              <p
+                className="font-serif-heading text-2xl md:text-[1.75rem] font-bold font-number-mono leading-none"
+                style={{ color: '#145C3E' }}
+              >
                 <CountUp to={totalIncome} duration={1.8} separator="." />
               </p>
               <p className="text-xs mt-1.5" style={{ color: '#5A9E7A' }}>Akumulasi seluruh pemasukan</p>
@@ -92,25 +97,22 @@ export default function DashboardClient({ userName, totalIncome, totalExpense, b
         <AnimatedContent distance={36} duration={0.65} delay={0.12} threshold={0.05}>
           <div className="stitched-card card-expense p-5 flex flex-col justify-between h-full rounded-2xl">
             <div className="flex items-start justify-between">
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-wider mb-0.5" style={{ color: '#C0392B' }}>
-                  Total Pengeluaran
-                </p>
-              </div>
+              <p className="text-[11px] font-bold uppercase tracking-wider mb-0.5" style={{ color: '#C0392B' }}>
+                Total Pengeluaran
+              </p>
               <div
                 className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                style={{
-                  background: 'linear-gradient(135deg, #FAD4D0, #F5B8B2)',
-                  color: '#922B21',
-                }}
+                style={{ background: 'linear-gradient(135deg, #FAD4D0, #F5B8B2)', color: '#922B21' }}
               >
                 <TrendDown size={17} weight="bold" />
               </div>
             </div>
             <div className="mt-5">
               <p className="text-[11px] font-bold font-number-mono mb-0.5" style={{ color: '#C0736C' }}>Rp</p>
-              <p className="font-serif-heading text-2xl md:text-[1.75rem] font-bold font-number-mono leading-none"
-                 style={{ color: '#922B21' }}>
+              <p
+                className="font-serif-heading text-2xl md:text-[1.75rem] font-bold font-number-mono leading-none"
+                style={{ color: '#922B21' }}
+              >
                 <CountUp to={totalExpense} duration={1.8} separator="." />
               </p>
               <p className="text-xs mt-1.5" style={{ color: '#C0736C' }}>Akumulasi seluruh pengeluaran</p>
@@ -120,46 +122,51 @@ export default function DashboardClient({ userName, totalIncome, totalExpense, b
 
         {/* Balance Card */}
         <AnimatedContent distance={36} duration={0.65} delay={0.19} threshold={0.05}>
-          <div className={`stitched-card ${isPositive ? 'card-balance' : 'card-balance-negative'} p-5 flex flex-col justify-between h-full rounded-2xl`}>
+          <div
+            className={`stitched-card ${isPositive ? 'card-balance' : 'card-balance-negative'} p-5 flex flex-col justify-between h-full rounded-2xl`}
+          >
             <div className="flex items-start justify-between">
-              <div>
-                <p className="text-[11px] font-bold uppercase tracking-wider mb-0.5"
-                   style={{ color: isPositive ? '#162848' : '#C0392B' }}>
-                  Saldo Bersih
-                </p>
-              </div>
+              <p
+                className="text-[11px] font-bold uppercase tracking-wider mb-0.5"
+                style={{ color: isPositive ? '#162848' : '#C0392B' }}
+              >
+                Saldo Bersih
+              </p>
               <div
                 className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-                style={isPositive ? {
-                  background: 'linear-gradient(135deg, #C8D8F0, #A8C0E5)',
-                  color: '#0F1E36',
-                } : {
-                  background: 'linear-gradient(135deg, #FAD4D0, #F5B8B2)',
-                  color: '#922B21',
-                }}
+                style={
+                  isPositive
+                    ? { background: 'linear-gradient(135deg, #C8D8F0, #A8C0E5)', color: '#0F1E36' }
+                    : { background: 'linear-gradient(135deg, #FAD4D0, #F5B8B2)', color: '#922B21' }
+                }
               >
                 <Wallet size={17} weight="bold" />
               </div>
             </div>
             <div className="mt-5">
-              <p className="text-[11px] font-bold font-number-mono mb-0.5"
-                 style={{ color: isPositive ? '#8090A8' : '#C0736C' }}>
-                {!isPositive && '??''} Rp
+              <p
+                className="text-[11px] font-bold font-number-mono mb-0.5"
+                style={{ color: isPositive ? '#8090A8' : '#C0736C' }}
+              >
+                {!isPositive && '-'} Rp
               </p>
-              <p className="font-serif-heading text-2xl md:text-[1.75rem] font-bold font-number-mono leading-none"
-                 style={{ color: isPositive ? '#0F1E36' : '#922B21' }}>
+              <p
+                className="font-serif-heading text-2xl md:text-[1.75rem] font-bold font-number-mono leading-none"
+                style={{ color: isPositive ? '#0F1E36' : '#922B21' }}
+              >
                 <CountUp to={Math.abs(balance)} duration={2} separator="." />
               </p>
-              <p className="text-xs mt-1.5" style={{ color: '#8090A8' }}>Selisih pemasukan & pengeluaran</p>
+              <p className="text-xs mt-1.5" style={{ color: '#8090A8' }}>Selisih pemasukan &amp; pengeluaran</p>
             </div>
           </div>
         </AnimatedContent>
 
       </div>
-      {/* ?"E?"E CHARTS ?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E */}
+
+      {/* CHARTS */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
-        {/* Pie Chart ?E" kiri */}
+        {/* Pie Chart - kiri */}
         <AnimatedContent distance={28} duration={0.7} delay={0.1} threshold={0.05}>
           <div className="stitched-card p-6 h-full rounded-2xl">
             <div className="flex items-center gap-3 mb-4 pb-3" style={{ borderBottom: '1px solid #F0EDE5' }}>
@@ -177,7 +184,7 @@ export default function DashboardClient({ userName, totalIncome, totalExpense, b
           </div>
         </AnimatedContent>
 
-        {/* Area Chart ?E" kanan */}
+        {/* Area Chart - kanan */}
         <AnimatedContent distance={28} duration={0.7} delay={0.18} threshold={0.05}>
           <div className="stitched-card p-6 h-full rounded-2xl">
             <div className="flex items-center gap-3 mb-4 pb-3" style={{ borderBottom: '1px solid #F0EDE5' }}>
@@ -202,7 +209,7 @@ export default function DashboardClient({ userName, totalIncome, totalExpense, b
 
       </div>
 
-      {/* ?"E?"E QUICK NAV CARDS ?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E */}
+      {/* QUICK NAV CARDS */}
       <AnimatedContent distance={24} duration={0.65} delay={0.08} threshold={0.05}>
         <div
           className="rounded-2xl overflow-hidden relative"
@@ -222,7 +229,9 @@ export default function DashboardClient({ userName, totalIncome, totalExpense, b
           {/* top gold shimmer */}
           <div
             className="absolute top-0 left-0 right-0 h-px"
-            style={{ background: 'linear-gradient(to right, transparent, rgba(201,151,58,0.5) 40%, rgba(232,180,85,0.5) 60%, transparent)' }}
+            style={{
+              background: 'linear-gradient(to right, transparent, rgba(201,151,58,0.5) 40%, rgba(232,180,85,0.5) 60%, transparent)',
+            }}
           />
 
           <div className="relative p-6">
@@ -234,7 +243,7 @@ export default function DashboardClient({ userName, totalIncome, totalExpense, b
                 Navigasi Cepat
               </p>
               <h2 className="font-serif-heading text-lg font-bold text-white">
-                Kelola Keuangan & Investasi
+                Kelola Keuangan &amp; Investasi
               </h2>
             </div>
 
