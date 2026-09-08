@@ -1,3 +1,4 @@
+
 'use client'
 
 import { ExpensePieChart, MonthlyBarChart } from './charts'
@@ -155,9 +156,10 @@ export default function DashboardClient({ userName, totalIncome, totalExpense, b
         </AnimatedContent>
 
       </div>
-
       {/* ── CHARTS ─────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+        {/* Pie Chart — kiri */}
         <AnimatedContent distance={28} duration={0.7} delay={0.1} threshold={0.05}>
           <div className="stitched-card p-6 h-full rounded-2xl">
             <div className="flex items-center gap-3 mb-4 pb-3" style={{ borderBottom: '1px solid #F0EDE5' }}>
@@ -175,6 +177,7 @@ export default function DashboardClient({ userName, totalIncome, totalExpense, b
           </div>
         </AnimatedContent>
 
+        {/* Area Chart — kanan */}
         <AnimatedContent distance={28} duration={0.7} delay={0.18} threshold={0.05}>
           <div className="stitched-card p-6 h-full rounded-2xl">
             <div className="flex items-center gap-3 mb-4 pb-3" style={{ borderBottom: '1px solid #F0EDE5' }}>
@@ -184,13 +187,20 @@ export default function DashboardClient({ userName, totalIncome, totalExpense, b
               >
                 <ChartBar size={14} weight="bold" />
               </div>
-              <h2 className="font-serif-heading text-sm font-bold" style={{ color: '#1A1F2E' }}>
-                Arus Kas Bulanan
-              </h2>
+              <div>
+                <h2 className="font-serif-heading text-sm font-bold" style={{ color: '#1A1F2E' }}>
+                  Arus Kas Bulanan
+                </h2>
+                <p className="text-[10px] mt-0.5" style={{ color: '#94A3B8' }}>
+                  Area = volume &nbsp;&middot;&nbsp; Garis putus-putus = Net
+                </p>
+              </div>
             </div>
             <MonthlyBarChart data={monthlyData} />
           </div>
         </AnimatedContent>
+
+      </div>imatedContent>
       </div>
 
       {/* ── QUICK NAV CARDS ────────────────────────────────── */}
