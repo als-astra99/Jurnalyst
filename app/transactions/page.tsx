@@ -414,13 +414,13 @@ export default function TransactionsPage() {
                     <input
                       type="date"
                       required
-                      min={today}
+                      max={today}
                       value={date}
                       onChange={(e) => setDate(e.target.value)}
                       className="form-input date-input-premium"
                     />
                     <p className="text-[11px] text-slate-400 mt-1">
-                      Hanya tanggal hari ini dan ke depan yang diperbolehkan.
+                      Hanya tanggal hari ini dan sebelumnya yang diperbolehkan.
                     </p>
                   </div>
 
