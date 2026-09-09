@@ -8,6 +8,7 @@ import AnimatedContent from '@/components/reactbits/AnimatedContent'
 import FadeContent from '@/components/reactbits/FadeContent'
 import RecurringTab from '@/components/RecurringTab'
 import SpotlightCard from '@/components/reactbits/SpotlightCard'
+import Link from 'next/link'
 import {
   Printer,
   FileXls,
@@ -401,8 +402,8 @@ export default function TransactionsPage() {
                 <Warning size={18} className="shrink-0 text-amber-600 mt-0.5" />
                 <span>
                   Tambahkan minimal 1 dompet dan 1 kategori terlebih dahulu di menu{' '}
-                  <a href="/accounts" className="underline font-semibold">Kelola Dompet</a> atau{' '}
-                  <a href="/categories" className="underline font-semibold">Kelola Kategori</a>.
+                  <Link href="/accounts" className="underline font-semibold">Kelola Dompet</Link> atau{' '}
+                  <Link href="/categories" className="underline font-semibold">Kelola Kategori</Link>.
                 </span>
               </div>
             ) : (
