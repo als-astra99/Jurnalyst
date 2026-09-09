@@ -14,7 +14,7 @@ import {
   XCircle,
   Hourglass
 } from '@phosphor-icons/react'
-import SelectInput from '@/components/ui/SelectInput'
+import SelectInput, { SelectOption } from '@/components/ui/SelectInput'
 
 type Holding = {
   id: string
@@ -216,7 +216,7 @@ export default function JournalPage() {
                     const key = h.assets.symbol
                     if (!assetMap.has(key)) {
                       assetMap.set(key, {
-                        groupLabel: `${h.assets.name} ?E" ${h.assets.symbol}`,
+                        groupLabel: `${h.assets.name} - ${h.assets.symbol}`,
                         items: [],
                       })
                     }
@@ -235,8 +235,8 @@ export default function JournalPage() {
                       grouped.push({
                         value: h.id,
                         label: `${h.quantity} unit @ Rp ${h.avg_buy_price.toLocaleString('id-ID')}`,
-                        sublabel: h.status === 'open' ? '?-? Terbuka' : '?-? Ditutup',
-                      })
+                        sublabel: h.status === 'open' ? 'Terbuka' : 'Ditutup',
+                      } as SelectOption)
                     }
                   }
 
@@ -249,11 +249,11 @@ export default function JournalPage() {
                 value={entryType}
                 onChange={setEntryType}
                 options={[
-                  { value: 'buy',  label: 'Buy',            sublabel: 'Beli posisi baru' },
-                  { value: 'sell', label: 'Sell',           sublabel: 'Jual / tutup posisi' },
-                  { value: 'hold', label: 'Hold',           sublabel: 'Tahan posisi' },
-                  { value: 'note', label: 'Catatan Analisa',sublabel: 'Riset & observasi' },
-                ]}
+                  { value: 'buy',  label: 'Buy',             sublabel: 'Beli posisi baru' },
+                  { value: 'sell', label: 'Sell',            sublabel: 'Jual / tutup posisi' },
+                  { value: 'hold', label: 'Hold',            sublabel: 'Tahan posisi' },
+                  { value: 'note', label: 'Catatan Analisa', sublabel: 'Riset & observasi' },
+                ] as SelectOption[]}
               />
 
               <div className="sm:col-span-2">
@@ -297,10 +297,10 @@ export default function JournalPage() {
                 onChange={setResult}
                 options={[
                   { value: 'ongoing',   label: 'Ongoing',   sublabel: 'Masih berjalan' },
-                  { value: 'win',       label: 'Win ??"',     sublabel: 'Profit' },
-                  { value: 'loss',      label: 'Loss ??-',    sublabel: 'Rugi' },
+                  { value: 'win',       label: 'Win',        sublabel: 'Profit' },
+                  { value: 'loss',      label: 'Loss',       sublabel: 'Rugi' },
                   { value: 'breakeven', label: 'Breakeven', sublabel: 'Impas' },
-                ]}
+                ] as SelectOption[]}
               />
 
               <div>
