@@ -18,10 +18,11 @@ const LIGHT2 = 'FFFEF7EC'
 function borders(): ExcelJS.Borders {
   const s: ExcelJS.BorderStyle = 'thin'
   return {
-    top:    { style: s, color: { argb: 'FFE5E7EB' } },
-    bottom: { style: s, color: { argb: 'FFE5E7EB' } },
-    left:   { style: s, color: { argb: 'FFE5E7EB' } },
-    right:  { style: s, color: { argb: 'FFE5E7EB' } },
+    top:      { style: s, color: { argb: 'FFE5E7EB' } },
+    bottom:   { style: s, color: { argb: 'FFE5E7EB' } },
+    left:     { style: s, color: { argb: 'FFE5E7EB' } },
+    right:    { style: s, color: { argb: 'FFE5E7EB' } },
+    diagonal: {},
   }
 }
 
