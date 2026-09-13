@@ -39,3 +39,15 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# AI assistant files
+AGENTS.md
+CLAUDE.md
+LAPORAN_*.md
+_write_excel.py
+build_output.txt
+*.kiro
+.kiro/
+.cursor/
+.copilot/
+
