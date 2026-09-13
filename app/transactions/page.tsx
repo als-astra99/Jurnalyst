@@ -46,6 +46,7 @@ type WalletBalance = {
   income:           number
   expense:          number
   balance:          number
+  transactionCount: number
   monthlyBreakdown: MonthlyBreakdown[]
 }
 
@@ -180,52 +181,50 @@ export default function TransactionsPage() {
 
   // Saldo per dompet — dihitung dari SEMUA transaksi dalam satu pass
   const walletBalances = useMemo((): WalletBalance[] => {
-    // Map dompet: id -> { totals + monthlyMap }
     const map: Record<string, {
       id: string; name: string; accType: string
-      income: number; expense: number
+      income: number; expense: number; transactionCount: number
       monthlyMap: Record<string, { income: number; expense: number }>
     }> = {}
 
     // Inisialisasi dari accounts
     for (const acc of accounts) {
-      map[acc.id] = { id: acc.id, name: acc.name, accType: acc.type, income: 0, expense: 0, monthlyMap: {} }
+      map[acc.id] = { id: acc.id, name: acc.name, accType: acc.type, income: 0, expense: 0, transactionCount: 0, monthlyMap: {} }
     }
 
-    // Satu pass akumulasi total + per bulan
+    // Satu pass akumulasi total + per bulan + count transaksi
     for (const t of allTransactions) {
       const acc = accounts.find((a) => a.name === t.accounts?.name)
       const key = acc?.id || t.accounts?.name || 'unknown'
       if (!map[key]) {
-        map[key] = { id: key, name: t.accounts?.name || 'Tanpa Dompet', accType: acc?.type || 'cash', income: 0, expense: 0, monthlyMap: {} }
+        map[key] = { id: key, name: t.accounts?.name || 'Tanpa Dompet', accType: acc?.type || 'cash', income: 0, expense: 0, transactionCount: 0, monthlyMap: {} }
       }
       const ym  = t.transaction_date.slice(0, 7)
       const amt = Number(t.amount)
+      map[key].transactionCount++
       if (!map[key].monthlyMap[ym]) map[key].monthlyMap[ym] = { income: 0, expense: 0 }
       if (t.type === 'income') { map[key].income += amt; map[key].monthlyMap[ym].income += amt }
       else                     { map[key].expense += amt; map[key].monthlyMap[ym].expense += amt }
     }
 
-    return Object.values(map).map((w) => ({
-      id:      w.id,
-      name:    w.name,
-      accType: w.accType,
-      income:  w.income,
-      expense: w.expense,
-      balance: w.income - w.expense,
-      monthlyBreakdown: Object.entries(w.monthlyMap)
-        .sort(([a], [b]) => b.localeCompare(a)) // terbaru dulu
-        .map(([ym, v]) => {
-          const [yr, m] = ym.split('-')
-          return {
-            ym,
-            label:   `${BULAN[parseInt(m) - 1]} ${yr}`,
-            income:  v.income,
-            expense: v.expense,
-            net:     v.income - v.expense,
-          }
-        }),
-    }))
+    return Object.values(map)
+      .map((w) => ({
+        id:               w.id,
+        name:             w.name,
+        accType:          w.accType,
+        income:           w.income,
+        expense:          w.expense,
+        balance:          w.income - w.expense,
+        transactionCount: w.transactionCount,
+        monthlyBreakdown: Object.entries(w.monthlyMap)
+          .sort(([a], [b]) => b.localeCompare(a))
+          .map(([ym, v]) => {
+            const [yr, m] = ym.split('-')
+            return { ym, label: `${BULAN[parseInt(m) - 1]} ${yr}`, income: v.income, expense: v.expense, net: v.income - v.expense }
+          }),
+      }))
+      // Sort: saldo terbesar dulu, kemudian tersering dipakai
+      .sort((a, b) => b.balance - a.balance || b.transactionCount - a.transactionCount)
   }, [accounts, allTransactions])
 
   // Rekap helpers untuk export
@@ -440,206 +439,270 @@ export default function TransactionsPage() {
                   </Link>
                 </div>
               </AnimatedContent>
-            ) : (
-              <>
-                {/* Grid kartu dompet */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                  <StaggeredMenu staggerDelay={0.07} initialDelay={0.05}>
-                    {walletBalances.map((w) => {
-                      const { bg, color } = walletTypeBg(w.accType)
-                      const isPos         = w.balance >= 0
-                      const isExpanded    = expandedWallet === w.id
-                      const maxNet        = w.monthlyBreakdown.length > 0
-                        ? Math.max(...w.monthlyBreakdown.map((m) => Math.abs(m.net)), 1)
-                        : 1
+            ) : (() => {
+              // Hitung highlight sekali pakai
+              const richest  = walletBalances[0]   // sudah sorted: saldo terbesar pertama
+              const busiest  = [...walletBalances].sort((a, b) => b.transactionCount - a.transactionCount)[0]
+              const totIn    = walletBalances.reduce((s, w) => s + w.income,  0)
+              const totOut   = walletBalances.reduce((s, w) => s + w.expense, 0)
+              const totBal   = totIn - totOut
+              const activeCount = walletBalances.filter((w) => w.transactionCount > 0).length
 
-                      return (
-                        <SpotlightCard
-                          key={w.id}
-                          spotlightColor={isPos ? 'rgba(47, 158, 110, 0.1)' : 'rgba(209, 67, 67, 0.08)'}
-                          className="stitched-card rounded-2xl overflow-hidden"
-                          style={{ background: '#FFFFFF' }}
-                        >
-                          {/* ── Stripe warna atas ── */}
-                          <div className="h-1 w-full" style={{
-                            background: isPos
-                              ? 'linear-gradient(to right, #22A06B, #34D399)'
-                              : 'linear-gradient(to right, #E55347, #F87171)',
-                          }} />
+              return (
+                <div className="flex flex-col lg:flex-row gap-5 items-start">
 
-                          <div className="p-5">
-                            {/* Header: ikon + nama + tipe */}
-                            <div className="flex items-center gap-3 mb-4">
-                              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                                style={{ background: bg, color }}>
-                                <WalletIcon type={w.accType} size={18} />
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <p className="font-serif-heading font-bold text-sm text-slate-900 truncate">{w.name}</p>
-                                <span className="inline-block text-[10px] font-bold uppercase tracking-widest mt-0.5"
-                                  style={{ color: '#94A3B8' }}>
-                                  {walletTypeLabel(w.accType)}
-                                </span>
-                              </div>
-                            </div>
+                  {/* ── KIRI: Grid kartu dompet ── */}
+                  <div className="flex-1 min-w-0">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <StaggeredMenu staggerDelay={0.07} initialDelay={0.05}>
+                        {walletBalances.map((w) => {
+                          const { bg, color } = walletTypeBg(w.accType)
+                          const isPos         = w.balance >= 0
+                          const isExpanded    = expandedWallet === w.id
+                          const maxNet        = w.monthlyBreakdown.length > 0
+                            ? Math.max(...w.monthlyBreakdown.map((m) => Math.abs(m.net)), 1) : 1
+                          const isRichest     = richest?.id === w.id && w.balance > 0
+                          const isBusiest     = busiest?.id === w.id && w.transactionCount > 0
 
-                            {/* Saldo bersih — menonjol */}
-                            <div className="mb-4 p-3 rounded-xl" style={{
-                              background: isPos
-                                ? 'linear-gradient(135deg, #F0FBF5, #E6F7EE)'
-                                : 'linear-gradient(135deg, #FEF2F2, #FEE2E2)',
-                            }}>
-                              <p className="text-[10px] font-bold uppercase tracking-widest mb-1"
-                                style={{ color: isPos ? '#2F9E6E' : '#D14343' }}>
-                                Saldo Bersih
-                              </p>
-                              <div className="flex items-baseline gap-1">
-                                <span className="text-[11px] font-bold font-number-mono"
-                                  style={{ color: isPos ? '#2F9E6E' : '#D14343' }}>
-                                  {!isPos && '-'}Rp
-                                </span>
-                                <span className={`font-serif-heading text-2xl font-bold font-number-mono leading-none ${isPos ? 'text-[#1A7A54]' : 'text-[#D14343]'}`}>
-                                  <CountUp to={Math.abs(w.balance)} duration={1.4} separator="." />
-                                </span>
-                              </div>
-                            </div>
+                          return (
+                            <SpotlightCard
+                              key={w.id}
+                              spotlightColor={isPos ? 'rgba(47, 158, 110, 0.1)' : 'rgba(209, 67, 67, 0.08)'}
+                              className="stitched-card rounded-2xl overflow-hidden"
+                              style={{ background: '#FFFFFF' }}
+                            >
+                              {/* Stripe warna atas */}
+                              <div className="h-1 w-full" style={{
+                                background: isPos
+                                  ? 'linear-gradient(to right, #22A06B, #34D399)'
+                                  : 'linear-gradient(to right, #E55347, #F87171)',
+                              }} />
 
-                            {/* Total masuk & keluar — dua kolom */}
-                            <div className="grid grid-cols-2 gap-2 mb-4">
-                              <div className="p-2.5 rounded-lg" style={{ background: '#F0FBF5' }}>
-                                <div className="flex items-center gap-1 mb-1">
-                                  <TrendUp size={10} weight="bold" className="text-[#2F9E6E]" />
-                                  <span className="text-[10px] font-semibold text-[#2F9E6E]">Masuk</span>
-                                </div>
-                                <p className="text-xs font-bold font-number-mono text-[#1A7A54]">
-                                  +{formatRupiah(w.income)}
-                                </p>
-                              </div>
-                              <div className="p-2.5 rounded-lg" style={{ background: '#FEF2F2' }}>
-                                <div className="flex items-center gap-1 mb-1">
-                                  <TrendDown size={10} weight="bold" className="text-[#D14343]" />
-                                  <span className="text-[10px] font-semibold text-[#D14343]">Keluar</span>
-                                </div>
-                                <p className="text-xs font-bold font-number-mono text-[#D14343]">
-                                  -{formatRupiah(w.expense)}
-                                </p>
-                              </div>
-                            </div>
-
-                            {/* Accordion toggle — Riwayat per Bulan */}
-                            {w.monthlyBreakdown.length > 0 && (
-                              <div>
-                                <button
-                                  onClick={() => setExpandedWallet(isExpanded ? null : w.id)}
-                                  className="w-full flex items-center justify-between py-2 px-0 text-xs font-semibold transition-colors"
-                                  style={{
-                                    borderTop: '1px solid #F0EDE5',
-                                    color: '#64748B',
-                                  }}
-                                  onMouseEnter={(e) => { e.currentTarget.style.color = '#1A1F2E' }}
-                                  onMouseLeave={(e) => { e.currentTarget.style.color = '#64748B' }}
-                                >
-                                  <span>Riwayat per Bulan</span>
-                                  <div style={{
-                                    transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                                    transition: 'transform 0.25s ease',
-                                  }}>
-                                    <CaretDown size={13} weight="bold" />
+                              <div className="p-5">
+                                {/* Header: ikon + nama + tipe + badge */}
+                                <div className="flex items-start gap-3 mb-4">
+                                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                                    style={{ background: bg, color }}>
+                                    <WalletIcon type={w.accType} size={18} />
                                   </div>
-                                </button>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="font-serif-heading font-bold text-sm text-slate-900 truncate">{w.name}</p>
+                                    <span className="text-[10px] font-bold uppercase tracking-widest"
+                                      style={{ color: '#94A3B8' }}>
+                                      {walletTypeLabel(w.accType)}
+                                    </span>
+                                    {/* Badge */}
+                                    {(isRichest || isBusiest) && (
+                                      <div className="flex flex-wrap gap-1 mt-1.5">
+                                        {isRichest && (
+                                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                            style={{ background: 'linear-gradient(135deg, #FEF3C7, #FDE68A)', color: '#92400E', border: '1px solid #FCD34D' }}>
+                                            &#9733; Saldo Terbesar
+                                          </span>
+                                        )}
+                                        {isBusiest && (
+                                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                            style={{ background: 'linear-gradient(135deg, #DBEAFE, #BFDBFE)', color: '#1E40AF', border: '1px solid #93C5FD' }}>
+                                            &#8593; Paling Sering
+                                          </span>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
 
-                                {/* FadeContent — breakdown per bulan */}
-                                {isExpanded && (
-                                  <FadeContent duration={250} delay={0} threshold={0.01}>
-                                    <div className="space-y-1.5 pt-2 pb-1">
-                                      {w.monthlyBreakdown.map((mb) => {
-                                        const barPct = Math.round((Math.abs(mb.net) / maxNet) * 100)
-                                        const netPos = mb.net >= 0
-                                        return (
-                                          <div key={mb.ym} className="rounded-lg p-2.5"
-                                            style={{ background: '#FAFAF7', border: '1px solid #F0EDE5' }}>
-                                            {/* Baris atas: label bulan + net */}
-                                            <div className="flex items-center justify-between mb-1.5">
-                                              <span className="text-[11px] font-bold text-slate-700">{mb.label}</span>
-                                              <span className={`text-[11px] font-bold font-number-mono ${netPos ? 'text-[#2F9E6E]' : 'text-[#D14343]'}`}>
-                                                {netPos ? '+' : '-'}{formatRupiah(mb.net)}
-                                              </span>
-                                            </div>
-                                            {/* Mini bar progress */}
-                                            <div className="h-1 w-full rounded-full mb-1.5" style={{ background: '#E8E4DC' }}>
-                                              <div
-                                                className="h-1 rounded-full transition-all duration-500"
-                                                style={{
-                                                  width: `${barPct}%`,
-                                                  background: netPos
-                                                    ? 'linear-gradient(to right, #22A06B, #34D399)'
-                                                    : 'linear-gradient(to right, #E55347, #F87171)',
-                                                }}
-                                              />
-                                            </div>
-                                            {/* Masuk & keluar bulan */}
-                                            <div className="flex gap-3 text-[10px] font-number-mono">
-                                              <span className="text-[#2F9E6E]">+{formatRupiah(mb.income)}</span>
-                                              <span style={{ color: '#D6D0C4' }}>/</span>
-                                              <span className="text-[#D14343]">-{formatRupiah(mb.expense)}</span>
-                                            </div>
-                                          </div>
-                                        )
-                                      })}
+                                {/* Saldo bersih */}
+                                <div className="mb-4 p-3 rounded-xl" style={{
+                                  background: isPos ? 'linear-gradient(135deg, #F0FBF5, #E6F7EE)' : 'linear-gradient(135deg, #FEF2F2, #FEE2E2)',
+                                }}>
+                                  <p className="text-[10px] font-bold uppercase tracking-widest mb-1"
+                                    style={{ color: isPos ? '#2F9E6E' : '#D14343' }}>Saldo Bersih</p>
+                                  <div className="flex items-baseline gap-1">
+                                    <span className="text-[11px] font-bold font-number-mono"
+                                      style={{ color: isPos ? '#2F9E6E' : '#D14343' }}>
+                                      {!isPos && '-'}Rp
+                                    </span>
+                                    <span className={`font-serif-heading text-2xl font-bold font-number-mono leading-none ${isPos ? 'text-[#1A7A54]' : 'text-[#D14343]'}`}>
+                                      <CountUp to={Math.abs(w.balance)} duration={1.4} separator="." />
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Masuk & keluar */}
+                                <div className="grid grid-cols-2 gap-2 mb-4">
+                                  <div className="p-2.5 rounded-lg" style={{ background: '#F0FBF5' }}>
+                                    <div className="flex items-center gap-1 mb-1">
+                                      <TrendUp size={10} weight="bold" className="text-[#2F9E6E]" />
+                                      <span className="text-[10px] font-semibold text-[#2F9E6E]">Masuk</span>
                                     </div>
-                                  </FadeContent>
+                                    <p className="text-xs font-bold font-number-mono text-[#1A7A54]">+{formatRupiah(w.income)}</p>
+                                  </div>
+                                  <div className="p-2.5 rounded-lg" style={{ background: '#FEF2F2' }}>
+                                    <div className="flex items-center gap-1 mb-1">
+                                      <TrendDown size={10} weight="bold" className="text-[#D14343]" />
+                                      <span className="text-[10px] font-semibold text-[#D14343]">Keluar</span>
+                                    </div>
+                                    <p className="text-xs font-bold font-number-mono text-[#D14343]">-{formatRupiah(w.expense)}</p>
+                                  </div>
+                                </div>
+
+                                {/* Accordion riwayat per bulan */}
+                                {w.monthlyBreakdown.length > 0 && (
+                                  <div>
+                                    <button
+                                      onClick={() => setExpandedWallet(isExpanded ? null : w.id)}
+                                      className="w-full flex items-center justify-between py-2 text-xs font-semibold transition-colors"
+                                      style={{ borderTop: '1px solid #F0EDE5', color: '#64748B' }}
+                                      onMouseEnter={(e) => { e.currentTarget.style.color = '#1A1F2E' }}
+                                      onMouseLeave={(e) => { e.currentTarget.style.color = '#64748B' }}
+                                    >
+                                      <span>Riwayat per Bulan</span>
+                                      <div style={{ transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.25s ease' }}>
+                                        <CaretDown size={13} weight="bold" />
+                                      </div>
+                                    </button>
+                                    {isExpanded && (
+                                      <FadeContent duration={250} delay={0} threshold={0.01}>
+                                        <div className="space-y-1.5 pt-2 pb-1">
+                                          {w.monthlyBreakdown.map((mb) => {
+                                            const barPct = Math.round((Math.abs(mb.net) / maxNet) * 100)
+                                            const netPos = mb.net >= 0
+                                            return (
+                                              <div key={mb.ym} className="rounded-lg p-2.5"
+                                                style={{ background: '#FAFAF7', border: '1px solid #F0EDE5' }}>
+                                                <div className="flex items-center justify-between mb-1.5">
+                                                  <span className="text-[11px] font-bold text-slate-700">{mb.label}</span>
+                                                  <span className={`text-[11px] font-bold font-number-mono ${netPos ? 'text-[#2F9E6E]' : 'text-[#D14343]'}`}>
+                                                    {netPos ? '+' : '-'}{formatRupiah(mb.net)}
+                                                  </span>
+                                                </div>
+                                                <div className="h-1 w-full rounded-full mb-1.5" style={{ background: '#E8E4DC' }}>
+                                                  <div className="h-1 rounded-full transition-all duration-500"
+                                                    style={{ width: `${barPct}%`, background: netPos ? 'linear-gradient(to right, #22A06B, #34D399)' : 'linear-gradient(to right, #E55347, #F87171)' }} />
+                                                </div>
+                                                <div className="flex gap-3 text-[10px] font-number-mono">
+                                                  <span className="text-[#2F9E6E]">+{formatRupiah(mb.income)}</span>
+                                                  <span style={{ color: '#D6D0C4' }}>/</span>
+                                                  <span className="text-[#D14343]">-{formatRupiah(mb.expense)}</span>
+                                                </div>
+                                              </div>
+                                            )
+                                          })}
+                                        </div>
+                                      </FadeContent>
+                                    )}
+                                  </div>
                                 )}
                               </div>
-                            )}
-                          </div>
-                        </SpotlightCard>
-                      )
-                    })}
-                  </StaggeredMenu>
-                </div>
-
-                {/* Total footer semua dompet */}
-                <AnimatedContent distance={20} duration={0.6} threshold={0.04}>
-                  <div className="rounded-2xl p-5" style={{
-                    background: 'linear-gradient(135deg, #0F1E36 0%, #162848 60%, #1A2F54 100%)',
-                    border: '1px solid rgba(201,151,58,0.2)',
-                  }}>
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div>
-                        <p className="text-[10px] uppercase tracking-widest font-bold mb-0.5"
-                          style={{ color: 'rgba(201,151,58,0.8)' }}>Total Semua Dompet</p>
-                        <p className="font-serif-heading text-sm font-bold text-white">
-                          {walletBalances.length} dompet terdaftar
-                        </p>
-                      </div>
-                      {(() => {
-                        const totIn  = walletBalances.reduce((s, w) => s + w.income,  0)
-                        const totOut = walletBalances.reduce((s, w) => s + w.expense, 0)
-                        const totBal = totIn - totOut
-                        return (
-                          <div className="flex items-center gap-6 text-xs font-number-mono">
-                            <div>
-                              <span className="text-[10px] block mb-0.5" style={{ color: 'rgba(148,163,184,0.65)' }}>Total Masuk</span>
-                              <span className="font-bold" style={{ color: '#4ADE80' }}>+{formatRupiah(totIn)}</span>
-                            </div>
-                            <div>
-                              <span className="text-[10px] block mb-0.5" style={{ color: 'rgba(148,163,184,0.65)' }}>Total Keluar</span>
-                              <span className="font-bold" style={{ color: '#F87171' }}>-{formatRupiah(totOut)}</span>
-                            </div>
-                            <div className="pl-4" style={{ borderLeft: '1px solid rgba(255,255,255,0.12)' }}>
-                              <span className="text-[10px] block mb-0.5" style={{ color: 'rgba(148,163,184,0.65)' }}>Total Saldo</span>
-                              <span className="font-bold text-sm" style={{ color: totBal >= 0 ? '#FFFFFF' : '#F87171' }}>
-                                {totBal < 0 && '-'}{formatRupiah(totBal)}
-                              </span>
-                            </div>
-                          </div>
-                        )
-                      })()}
+                            </SpotlightCard>
+                          )
+                        })}
+                      </StaggeredMenu>
                     </div>
                   </div>
-                </AnimatedContent>
-              </>
-            )}
+
+                  {/* ── KANAN: Panel Insight ── */}
+                  <AnimatedContent distance={24} duration={0.65} delay={0.15} threshold={0.04}>
+                    <div className="w-full lg:w-72 xl:w-80 shrink-0 space-y-4">
+
+                      {/* Total Saldo */}
+                      <div className="rounded-2xl p-5 overflow-hidden relative"
+                        style={{ background: 'linear-gradient(135deg, #0F1E36 0%, #162848 60%, #1A2F54 100%)', border: '1px solid rgba(201,151,58,0.2)' }}>
+                        <div className="absolute top-0 left-0 right-0 h-px"
+                          style={{ background: 'linear-gradient(to right, transparent, rgba(201,151,58,0.5), transparent)' }} />
+                        <p className="text-[10px] font-bold uppercase tracking-widest mb-3"
+                          style={{ color: 'rgba(201,151,58,0.8)' }}>Ringkasan Semua Dompet</p>
+                        <div className="mb-3">
+                          <p className="text-[10px] text-slate-400 mb-0.5">Total Saldo Bersih</p>
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-xs font-bold font-number-mono" style={{ color: totBal >= 0 ? '#4ADE80' : '#F87171' }}>
+                              {totBal < 0 && '-'}Rp
+                            </span>
+                            <span className="font-serif-heading text-2xl font-bold font-number-mono" style={{ color: totBal >= 0 ? '#FFFFFF' : '#F87171' }}>
+                              <CountUp to={Math.abs(totBal)} duration={1.6} separator="." />
+                            </span>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                          <div>
+                            <p className="text-[10px] mb-0.5" style={{ color: 'rgba(148,163,184,0.6)' }}>Masuk</p>
+                            <p className="text-xs font-bold font-number-mono" style={{ color: '#4ADE80' }}>+{formatRupiah(totIn)}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] mb-0.5" style={{ color: 'rgba(148,163,184,0.6)' }}>Keluar</p>
+                            <p className="text-xs font-bold font-number-mono" style={{ color: '#F87171' }}>-{formatRupiah(totOut)}</p>
+                          </div>
+                        </div>
+                        <p className="text-[10px] mt-3 pt-2" style={{ color: 'rgba(148,163,184,0.5)', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                          {activeCount} dari {walletBalances.length} dompet aktif
+                        </p>
+                      </div>
+
+                      {/* Dompet Saldo Terbesar */}
+                      {richest && richest.balance > 0 && (
+                        <div className="rounded-2xl p-4 border" style={{ background: '#FFFDF0', borderColor: '#FCD34D' }}>
+                          <div className="flex items-center gap-1.5 mb-3">
+                            <span className="text-sm">&#9733;</span>
+                            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#92400E' }}>
+                              Saldo Terbesar
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                              style={{ background: walletTypeBg(richest.accType).bg, color: walletTypeBg(richest.accType).color }}>
+                              <WalletIcon type={richest.accType} size={16} />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-bold text-sm text-slate-900 truncate">{richest.name}</p>
+                              <p className="text-xs font-bold font-number-mono text-[#1A7A54]">
+                                Rp <CountUp to={richest.balance} duration={1.2} separator="." />
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Dompet Tersering Dipakai */}
+                      {busiest && busiest.transactionCount > 0 && (
+                        <div className="rounded-2xl p-4 border" style={{ background: '#EFF6FF', borderColor: '#93C5FD' }}>
+                          <div className="flex items-center gap-1.5 mb-3">
+                            <span className="text-sm">&#8593;</span>
+                            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#1E40AF' }}>
+                              Paling Sering Dipakai
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                              style={{ background: walletTypeBg(busiest.accType).bg, color: walletTypeBg(busiest.accType).color }}>
+                              <WalletIcon type={busiest.accType} size={16} />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-bold text-sm text-slate-900 truncate">{busiest.name}</p>
+                              <p className="text-[11px] text-slate-500">
+                                {busiest.transactionCount} transaksi
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Link ke kelola dompet */}
+                      <Link href="/accounts"
+                        className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-xs font-semibold transition-all"
+                        style={{ background: '#F5F2EB', color: '#64748B', border: '1px solid #E8E4DC' }}
+                        onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = '#EDE9E0'; (e.currentTarget as HTMLAnchorElement).style.color = '#1A1F2E' }}
+                        onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = '#F5F2EB'; (e.currentTarget as HTMLAnchorElement).style.color = '#64748B' }}
+                      >
+                        <Wallet size={13} />
+                        <span>Kelola Dompet</span>
+                      </Link>
+
+                    </div>
+                  </AnimatedContent>
+
+                </div>
+              )
+            })()}
           </div>
         )}
 
