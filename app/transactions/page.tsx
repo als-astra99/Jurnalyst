@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import AppNavbar from '@/components/AppNavbar'
 import SelectInput from '@/components/ui/SelectInput'
@@ -8,25 +8,18 @@ import AnimatedContent from '@/components/reactbits/AnimatedContent'
 import FadeContent from '@/components/reactbits/FadeContent'
 import RecurringTab from '@/components/RecurringTab'
 import SpotlightCard from '@/components/reactbits/SpotlightCard'
+import StaggeredMenu from '@/components/reactbits/StaggeredMenu'
+import CountUp from '@/components/reactbits/CountUp'
 import Link from 'next/link'
 import {
-  Printer,
-  FileXls,
-  FileDoc,
-  Plus,
-  Trash,
-  Receipt,
-  CalendarBlank,
-  ArrowUpRight,
-  ArrowDownRight,
-  CaretLeft,
-  CaretRight,
-  Warning,
-  RepeatOnce,
-  ListBullets,
+  Printer, FileXls, FileDoc, Plus, Trash, Receipt,
+  CalendarBlank, ArrowUpRight, ArrowDownRight,
+  CaretLeft, CaretRight, Warning, RepeatOnce, ListBullets,
+  Wallet, Bank, CreditCard, Money, TrendUp, TrendDown,
 } from '@phosphor-icons/react'
 
-type Account = { id: string; name: string }
+// ── Types ──────────────────────────────────────────────────────────────────
+type Account  = { id: string; name: string; type: string }
 type Category = { id: string; name: string; type: string }
 type Transaction = {
   id: string
@@ -34,22 +27,30 @@ type Transaction = {
   type: string
   note: string
   transaction_date: string
-  accounts: { name: string } | null
+  accounts:   { name: string } | null
   categories: { name: string } | null
 }
 
-const HARI  = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
-const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
+type WalletBalance = {
+  id:       string
+  name:     string
+  accType:  string
+  income:   number
+  expense:  number
+  balance:  number
+}
+
+// ── Constants (di luar komponen agar tidak re-create) ──────────────────────
+const HARI  = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu']
+const BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
 
 function formatTanggalLengkap(dateStr: string) {
   const d = new Date(dateStr + 'T00:00:00')
   return `${HARI[d.getDay()]}, ${d.getDate()} ${BULAN[d.getMonth()]} ${d.getFullYear()}`
 }
-
 function formatRupiah(v: number) {
-  return 'Rp ' + v.toLocaleString('id-ID')
+  return 'Rp ' + Math.abs(v).toLocaleString('id-ID')
 }
-
 function getWeekRange(anchor: Date) {
   const d = new Date(anchor)
   const day = d.getDay()
@@ -61,17 +62,35 @@ function getWeekRange(anchor: Date) {
   sunday.setDate(monday.getDate() + 6)
   return { monday, sunday }
 }
+function toDateStr(d: Date) { return d.toISOString().slice(0, 10) }
 
-function toDateStr(d: Date) {
-  return d.toISOString().slice(0, 10)
+// ── Icon helper dompet ─────────────────────────────────────────────────────
+function WalletIcon({ type, size = 18 }: { type: string; size?: number }) {
+  if (type === 'bank')     return <Bank     size={size} />
+  if (type === 'e-wallet') return <CreditCard size={size} />
+  return <Money size={size} />
 }
 
+function walletTypeBg(type: string) {
+  if (type === 'bank')     return { bg: 'rgba(27,42,74,0.1)',      color: '#1B2A4A' }
+  if (type === 'e-wallet') return { bg: 'rgba(124,58,237,0.1)',    color: '#7C3AED' }
+  return                          { bg: 'rgba(47,158,110,0.1)',    color: '#2F9E6E' }
+}
+function walletTypeLabel(type: string) {
+  if (type === 'bank')     return 'Bank'
+  if (type === 'e-wallet') return 'E-Wallet'
+  return 'Tunai'
+}
+
+// ── Supabase client (module-level agar tidak re-instantiate per render) ────
+const supabase = createClient()
+
 export default function TransactionsPage() {
-  const [accounts, setAccounts]               = useState<Account[]>([])
-  const [categories, setCategories]           = useState<Category[]>([])
+  const [accounts,        setAccounts]        = useState<Account[]>([])
+  const [categories,      setCategories]      = useState<Category[]>([])
   const [allTransactions, setAllTransactions] = useState<Transaction[]>([])
 
-  const [activeTab, setActiveTab] = useState<'regular' | 'recurring'>('regular')
+  const [activeTab, setActiveTab] = useState<'regular' | 'recurring' | 'wallets'>('regular')
 
   const [accountId,  setAccountId]  = useState('')
   const [categoryId, setCategoryId] = useState('')
@@ -91,39 +110,41 @@ export default function TransactionsPage() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7))
   const [weekAnchor,    setWeekAnchor]    = useState(new Date())
 
-  const supabase = createClient()
-
-  const loadData = async () => {
-    const { data: acc } = await supabase.from('accounts').select('id, name')
-    const { data: cat } = await supabase.from('categories').select('id, name, type')
-    const { data: trx } = await supabase
-      .from('transactions')
-      .select('id, amount, type, note, transaction_date, accounts(name), categories(name)')
-      .order('transaction_date', { ascending: true })
-
-    setAccounts(acc || [])
+  // loadData dengan useCallback agar referensi stabil
+  const loadData = useCallback(async () => {
+    const [{ data: acc }, { data: cat }, { data: trx }] = await Promise.all([
+      supabase.from('accounts').select('id, name, type'),
+      supabase.from('categories').select('id, name, type'),
+      supabase
+        .from('transactions')
+        .select('id, amount, type, note, transaction_date, accounts(name), categories(name)')
+        .order('transaction_date', { ascending: true }),
+    ])
+    setAccounts((acc as Account[]) || [])
     setCategories(cat || [])
     setAllTransactions((trx as any) || [])
-  }
+  }, [])
 
-  useEffect(() => { loadData() }, [])
+  useEffect(() => { loadData() }, [loadData])
 
-  const filteredCategories = categories.filter((c) => c.type === type)
+  const filteredCategories = useMemo(
+    () => categories.filter((c) => c.type === type),
+    [categories, type]
+  )
 
   const { periodLabel, filteredTransactions } = useMemo(() => {
     if (viewMode === 'month') {
       const [y, m] = selectedMonth.split('-')
-      const label = `${BULAN[parseInt(m) - 1]} ${y}`
+      const label    = `${BULAN[parseInt(m) - 1]} ${y}`
       const filtered = allTransactions.filter((t) => t.transaction_date.startsWith(selectedMonth))
       return { periodLabel: label, filteredTransactions: filtered }
-    } else {
-      const { monday, sunday } = getWeekRange(weekAnchor)
-      const startStr = toDateStr(monday)
-      const endStr   = toDateStr(sunday)
-      const label    = `${monday.getDate()} ${BULAN[monday.getMonth()]} - ${sunday.getDate()} ${BULAN[sunday.getMonth()]} ${sunday.getFullYear()}`
-      const filtered = allTransactions.filter((t) => t.transaction_date >= startStr && t.transaction_date <= endStr)
-      return { periodLabel: label, filteredTransactions: filtered }
     }
+    const { monday, sunday } = getWeekRange(weekAnchor)
+    const startStr = toDateStr(monday)
+    const endStr   = toDateStr(sunday)
+    const label    = `${monday.getDate()} ${BULAN[monday.getMonth()]} - ${sunday.getDate()} ${BULAN[sunday.getMonth()]} ${sunday.getFullYear()}`
+    const filtered = allTransactions.filter((t) => t.transaction_date >= startStr && t.transaction_date <= endStr)
+    return { periodLabel: label, filteredTransactions: filtered }
   }, [viewMode, selectedMonth, weekAnchor, allTransactions])
 
   const groupedByDate = useMemo(() => {
@@ -137,68 +158,63 @@ export default function TransactionsPage() {
     return Object.entries(map).sort(([a], [b]) => a.localeCompare(b))
   }, [filteredTransactions])
 
-  const totalIncome  = filteredTransactions.filter((t) => t.type === 'income').reduce((s, t)  => s + Number(t.amount), 0)
-  const totalExpense = filteredTransactions.filter((t) => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0)
+  // Single-pass total (optimasi — dulu 2x filter+reduce)
+  const { totalIncome, totalExpense } = useMemo(() => {
+    let inc = 0, exp = 0
+    for (const t of filteredTransactions) {
+      if (t.type === 'income') inc += Number(t.amount)
+      else                     exp += Number(t.amount)
+    }
+    return { totalIncome: inc, totalExpense: exp }
+  }, [filteredTransactions])
 
-  const handleAdd = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
+  // Saldo per dompet — dihitung dari SEMUA transaksi, tanpa request DB baru
+  const walletBalances = useMemo((): WalletBalance[] => {
+    const map: Record<string, WalletBalance> = {}
+    // Inisialisasi dari accounts (untuk dompet yang belum punya transaksi pun muncul)
+    for (const acc of accounts) {
+      map[acc.id] = { id: acc.id, name: acc.name, accType: acc.type, income: 0, expense: 0, balance: 0 }
+    }
+    // Akumulasi dari transaksi
+    for (const t of allTransactions) {
+      // Cari account berdasarkan nama (karena transaksi hanya simpan nama, bukan id)
+      const acc = accounts.find((a) => a.name === t.accounts?.name)
+      const key = acc?.id || t.accounts?.name || 'unknown'
+      if (!map[key]) {
+        map[key] = {
+          id:      key,
+          name:    t.accounts?.name || 'Tanpa Dompet',
+          accType: acc?.type || 'cash',
+          income:  0,
+          expense: 0,
+          balance: 0,
+        }
+      }
+      if (t.type === 'income') map[key].income  += Number(t.amount)
+      else                     map[key].expense += Number(t.amount)
+    }
+    return Object.values(map).map((w) => ({ ...w, balance: w.income - w.expense }))
+  }, [accounts, allTransactions])
 
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
-    const { error } = await supabase.from('transactions').insert({
-      user_id:          user.id,
-      account_id:       accountId,
-      category_id:      categoryId,
-      amount:           parseFloat(amount),
-      type,
-      note,
-      transaction_date: date,
-    })
-
-    if (error) { setError(error.message); setLoading(false); return }
-
-    setAmount(''); setNote('')
-    setLoading(false)
-    loadData()
-  }
-
-  const handleDelete = async (id: string) => {
-    await supabase.from('transactions').delete().eq('id', id)
-    loadData()
-  }
-
-  const handlePrint = () => window.print()
-
-  // ?"E?"E Rekap helpers ?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E?"E
-  const buildSummaries = () => {
-    // Per dompet ?E" dari SEMUA transaksi
+  // Rekap helpers untuk export
+  const buildSummaries = useCallback(() => {
     const walletMap: Record<string, { name: string; income: number; expense: number }> = {}
+    const monthMap:  Record<string, { income: number; expense: number }> = {}
+    const yearMap:   Record<string, { income: number; expense: number }> = {}
+
     for (const t of allTransactions) {
       const name = t.accounts?.name || 'Tanpa Dompet'
+      const ym   = t.transaction_date.slice(0, 7)
+      const y    = t.transaction_date.slice(0, 4)
+
       if (!walletMap[name]) walletMap[name] = { name, income: 0, expense: 0 }
-      if (t.type === 'income') walletMap[name].income  += Number(t.amount)
-      else                     walletMap[name].expense += Number(t.amount)
-    }
+      if (!monthMap[ym])    monthMap[ym]    = { income: 0, expense: 0 }
+      if (!yearMap[y])      yearMap[y]      = { income: 0, expense: 0 }
 
-    // Per bulan
-    const monthMap: Record<string, { income: number; expense: number }> = {}
-    for (const t of allTransactions) {
-      const ym = t.transaction_date.slice(0, 7)
-      if (!monthMap[ym]) monthMap[ym] = { income: 0, expense: 0 }
-      if (t.type === 'income') monthMap[ym].income  += Number(t.amount)
-      else                     monthMap[ym].expense += Number(t.amount)
-    }
-
-    // Per tahun
-    const yearMap: Record<string, { income: number; expense: number }> = {}
-    for (const t of allTransactions) {
-      const y = t.transaction_date.slice(0, 4)
-      if (!yearMap[y]) yearMap[y] = { income: 0, expense: 0 }
-      if (t.type === 'income') yearMap[y].income  += Number(t.amount)
-      else                     yearMap[y].expense += Number(t.amount)
+      const isInc = t.type === 'income'
+      const amt   = Number(t.amount)
+      if (isInc) { walletMap[name].income += amt; monthMap[ym].income += amt; yearMap[y].income += amt }
+      else       { walletMap[name].expense += amt; monthMap[ym].expense += amt; yearMap[y].expense += amt }
     }
 
     return {
@@ -213,44 +229,55 @@ export default function TransactionsPage() {
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([yr, v]) => ({ label: yr, income: v.income, expense: v.expense })),
     }
+  }, [allTransactions])
+
+  const handleAdd = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true); setError('')
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const { error } = await supabase.from('transactions').insert({
+      user_id: user.id, account_id: accountId, category_id: categoryId,
+      amount: parseFloat(amount), type, note, transaction_date: date,
+    })
+    if (error) { setError(error.message); setLoading(false); return }
+    setAmount(''); setNote('')
+    setLoading(false)
+    loadData()
   }
+
+  const handleDelete = async (id: string) => {
+    await supabase.from('transactions').delete().eq('id', id)
+    loadData()
+  }
+
+  const handlePrint = () => window.print()
 
   const handleExportExcel = async () => {
     setExportingExcel(true)
     try {
       const res = await fetch('/api/reports/excel', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           periodLabel,
           groups: groupedByDate.map(([tgl, g]) => ({
             date: tgl,
             items: g.items.map((t) => ({
-              kategori: t.categories?.name || '-',
-              dompet:   t.accounts?.name   || '-',
-              jenis:    t.type === 'income' ? 'Pemasukan' : 'Pengeluaran',
-              catatan:  t.note || '',
-              jumlah:   t.amount,
+              kategori: t.categories?.name || '-', dompet: t.accounts?.name || '-',
+              jenis: t.type === 'income' ? 'Pemasukan' : 'Pengeluaran',
+              catatan: t.note || '', jumlah: t.amount,
             })),
           })),
-          totalIncome,
-          totalExpense,
-          ...buildSummaries(),
+          totalIncome, totalExpense, ...buildSummaries(),
         }),
       })
-
       if (!res.ok) throw new Error('Gagal membuat file Excel')
-
       const blob = await res.blob()
       const url  = window.URL.createObjectURL(blob)
       const a    = document.createElement('a')
-      a.href     = url
-      a.download = `Laporan-Jurnalyst-${periodLabel.replace(/\s+/g, '-')}.xlsx`
-      a.click()
+      a.href = url; a.download = `Laporan-Jurnalyst-${periodLabel.replace(/\s+/g, '-')}.xlsx`; a.click()
       window.URL.revokeObjectURL(url)
-    } catch (err) {
-      alert('Gagal export Excel: ' + (err as Error).message)
-    }
+    } catch (err) { alert('Gagal export Excel: ' + (err as Error).message) }
     setExportingExcel(false)
   }
 
@@ -258,41 +285,37 @@ export default function TransactionsPage() {
     setExportingWord(true)
     try {
       const res = await fetch('/api/reports/word', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           periodLabel,
           groups: groupedByDate.map(([tgl, g]) => ({
-            date:     tgl,
-            dayLabel: formatTanggalLengkap(tgl),
+            date: tgl, dayLabel: formatTanggalLengkap(tgl),
             items: g.items.map((t) => ({
-              kategori: t.categories?.name || '-',
-              dompet:   t.accounts?.name   || '-',
-              jenis:    t.type === 'income' ? 'Pemasukan' : 'Pengeluaran',
-              catatan:  t.note || '',
-              jumlah:   t.amount,
+              kategori: t.categories?.name || '-', dompet: t.accounts?.name || '-',
+              jenis: t.type === 'income' ? 'Pemasukan' : 'Pengeluaran',
+              catatan: t.note || '', jumlah: t.amount,
             })),
           })),
-          totalIncome,
-          totalExpense,
-          ...buildSummaries(),
+          totalIncome, totalExpense, ...buildSummaries(),
         }),
       })
-
       if (!res.ok) throw new Error('Gagal membuat file Word')
-
       const blob = await res.blob()
       const url  = window.URL.createObjectURL(blob)
       const a    = document.createElement('a')
-      a.href     = url
-      a.download = `Laporan-Jurnalyst-${periodLabel.replace(/\s+/g, '-')}.docx`
-      a.click()
+      a.href = url; a.download = `Laporan-Jurnalyst-${periodLabel.replace(/\s+/g, '-')}.docx`; a.click()
       window.URL.revokeObjectURL(url)
-    } catch (err) {
-      alert('Gagal export Word: ' + (err as Error).message)
-    }
+    } catch (err) { alert('Gagal export Word: ' + (err as Error).message) }
     setExportingWord(false)
   }
+
+  // Judul & subtitle dinamis per tab
+  const tabTitle = activeTab === 'regular' ? 'Riwayat Transaksi'
+    : activeTab === 'recurring' ? 'Transaksi Berulang'
+    : 'Saldo Dompet'
+  const tabSubtitle = activeTab === 'regular' ? 'Catatan rinci pemasukan dan pengeluaran harian.'
+    : activeTab === 'recurring' ? 'Jadwal otomatis: gaji, uang saku, cicilan, dan lainnya.'
+    : 'Ringkasan saldo per dompet dihitung dari seluruh riwayat transaksi.'
 
   return (
     <AppNavbar>
@@ -304,39 +327,26 @@ export default function TransactionsPage() {
             <div>
               <p className="page-header-eyebrow mb-1">Pencatatan</p>
               <h1 className="font-serif-heading text-2xl md:text-[1.85rem] font-bold leading-tight" style={{ color: '#1A1F2E' }}>
-                {activeTab === 'regular' ? 'Riwayat Transaksi' : 'Transaksi Berulang'}
+                {tabTitle}
               </h1>
-              <p className="text-sm mt-1.5" style={{ color: '#64748B' }}>
-                {activeTab === 'regular'
-                  ? 'Catatan rinci pemasukan dan pengeluaran harian.'
-                  : 'Jadwal otomatis: gaji, uang saku, cicilan, dan lainnya.'}
-              </p>
+              <p className="text-sm mt-1.5" style={{ color: '#64748B' }}>{tabSubtitle}</p>
             </div>
 
             {activeTab === 'regular' && (
               <div className="flex items-center gap-2 flex-wrap shrink-0">
                 <button onClick={handlePrint} className="btn-ghost">
-                  <Printer size={15} />
-                  <span>Cetak</span>
+                  <Printer size={15} /><span>Cetak</span>
                 </button>
                 <SpotlightCard spotlightColor="rgba(47, 158, 110, 0.18)" className="rounded-lg overflow-hidden">
-                  <button
-                    onClick={handleExportExcel}
-                    disabled={exportingExcel}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 text-[#2F9E6E] hover:bg-emerald-100 text-xs font-semibold transition-all disabled:opacity-50 hover:-translate-y-px"
-                  >
-                    <FileXls size={15} />
-                    <span>{exportingExcel ? 'Memuat...' : 'Excel'}</span>
+                  <button onClick={handleExportExcel} disabled={exportingExcel}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 text-[#2F9E6E] hover:bg-emerald-100 text-xs font-semibold transition-all disabled:opacity-50 hover:-translate-y-px">
+                    <FileXls size={15} /><span>{exportingExcel ? 'Memuat...' : 'Excel'}</span>
                   </button>
                 </SpotlightCard>
                 <SpotlightCard spotlightColor="rgba(27, 42, 74, 0.18)" className="rounded-lg overflow-hidden">
-                  <button
-                    onClick={handleExportWord}
-                    disabled={exportingWord}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-50 border border-blue-200 text-[#1B2A4A] hover:bg-blue-100 text-xs font-semibold transition-all disabled:opacity-50 hover:-translate-y-px"
-                  >
-                    <FileDoc size={15} />
-                    <span>{exportingWord ? 'Memuat...' : 'Word'}</span>
+                  <button onClick={handleExportWord} disabled={exportingWord}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-blue-50 border border-blue-200 text-[#1B2A4A] hover:bg-blue-100 text-xs font-semibold transition-all disabled:opacity-50 hover:-translate-y-px">
+                    <FileDoc size={15} /><span>{exportingWord ? 'Memuat...' : 'Word'}</span>
                   </button>
                 </SpotlightCard>
               </div>
@@ -345,53 +355,186 @@ export default function TransactionsPage() {
         </AnimatedContent>
 
         {/* TAB SWITCHER */}
-        <div
-          className="inline-flex p-1 rounded-xl gap-1 print:hidden"
-          style={{ background: '#F0EDE5', border: '1px solid #E8E4DC' }}
-        >
-          <button
-            onClick={() => setActiveTab('regular')}
+        <div className="inline-flex p-1 rounded-xl gap-1 print:hidden"
+          style={{ background: '#F0EDE5', border: '1px solid #E8E4DC' }}>
+          {/* Transaksi Biasa */}
+          <button onClick={() => setActiveTab('regular')}
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-200"
-            style={activeTab === 'regular' ? {
-              background: 'linear-gradient(135deg, #0F1E36, #162848)',
-              color: '#FFFFFF',
-              boxShadow: '0 2px 8px rgba(15,30,54,0.25)',
-            } : { background: 'transparent', color: '#64748B' }}
-          >
+            style={activeTab === 'regular'
+              ? { background: 'linear-gradient(135deg, #0F1E36, #162848)', color: '#FFFFFF', boxShadow: '0 2px 8px rgba(15,30,54,0.25)' }
+              : { background: 'transparent', color: '#64748B' }}>
             <ListBullets size={14} weight={activeTab === 'regular' ? 'fill' : 'regular'} />
             <span>Transaksi Biasa</span>
           </button>
-          <button
-            onClick={() => setActiveTab('recurring')}
+          {/* Transaksi Berulang */}
+          <button onClick={() => setActiveTab('recurring')}
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-200"
-            style={activeTab === 'recurring' ? {
-              background: 'linear-gradient(135deg, #3B1FA8, #5B3BD5)',
-              color: '#FFFFFF',
-              boxShadow: '0 2px 8px rgba(59,31,168,0.3)',
-            } : { background: 'transparent', color: '#64748B' }}
-          >
+            style={activeTab === 'recurring'
+              ? { background: 'linear-gradient(135deg, #3B1FA8, #5B3BD5)', color: '#FFFFFF', boxShadow: '0 2px 8px rgba(59,31,168,0.3)' }
+              : { background: 'transparent', color: '#64748B' }}>
             <RepeatOnce size={14} weight={activeTab === 'recurring' ? 'fill' : 'regular'} />
             <span>Transaksi Berulang</span>
           </button>
+          {/* Saldo Dompet */}
+          <button onClick={() => setActiveTab('wallets')}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-200"
+            style={activeTab === 'wallets'
+              ? { background: 'linear-gradient(135deg, #0D6E4A, #1A7A54)', color: '#FFFFFF', boxShadow: '0 2px 8px rgba(26,122,84,0.3)' }
+              : { background: 'transparent', color: '#64748B' }}>
+            <Wallet size={14} weight={activeTab === 'wallets' ? 'fill' : 'regular'} />
+            <span>Saldo Dompet</span>
+          </button>
         </div>
 
-        {/* TAB: BERULANG */}
+        {/* ── TAB: BERULANG ─────────────────────────────────── */}
         {activeTab === 'recurring' && <RecurringTab />}
 
-        {/* TAB: BIASA */}
+        {/* ── TAB: SALDO DOMPET ─────────────────────────────── */}
+        {activeTab === 'wallets' && (
+          <div className="space-y-4">
+
+            {walletBalances.length === 0 ? (
+              <AnimatedContent distance={24} duration={0.6} threshold={0.04}>
+                <div className="bg-white rounded-2xl border border-slate-200 p-16 text-center flex flex-col items-center">
+                  <div className="w-14 h-14 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mb-4">
+                    <Wallet size={28} />
+                  </div>
+                  <p className="font-serif-heading text-base font-bold text-slate-700">Belum Ada Data Dompet</p>
+                  <p className="text-xs text-slate-400 max-w-xs mt-1 leading-relaxed">
+                    Tambahkan dompet dan catat transaksi untuk melihat saldo.
+                  </p>
+                  <Link href="/accounts" className="mt-4 btn-primary text-xs">
+                    <Plus size={13} weight="bold" /><span>Tambah Dompet</span>
+                  </Link>
+                </div>
+              </AnimatedContent>
+            ) : (
+              <>
+                {/* Kartu per dompet */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <StaggeredMenu staggerDelay={0.07} initialDelay={0.05}>
+                    {walletBalances.map((w) => {
+                      const { bg, color } = walletTypeBg(w.accType)
+                      const isPositive    = w.balance >= 0
+                      return (
+                        <SpotlightCard
+                          key={w.id}
+                          spotlightColor={isPositive ? 'rgba(47, 158, 110, 0.12)' : 'rgba(209, 67, 67, 0.1)'}
+                          className="stitched-card p-5 rounded-2xl"
+                          style={{ background: '#FFFFFF' }}
+                        >
+                          {/* Header kartu */}
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                                style={{ background: bg, color }}>
+                                <WalletIcon type={w.accType} size={17} />
+                              </div>
+                              <div>
+                                <p className="font-bold text-sm text-slate-900 leading-tight">{w.name}</p>
+                                <span className="text-[10px] font-semibold uppercase tracking-wide"
+                                  style={{ color: '#94A3B8' }}>
+                                  {walletTypeLabel(w.accType)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Saldo bersih — menonjol */}
+                          <div className="mb-4">
+                            <p className="text-[10px] font-bold uppercase tracking-wider mb-1"
+                              style={{ color: '#94A3B8' }}>Saldo Bersih</p>
+                            <p className={`font-serif-heading text-2xl font-bold font-number-mono leading-none ${isPositive ? 'text-[#1A7A54]' : 'text-[#D14343]'}`}>
+                              {!isPositive && '-'}
+                              <CountUp to={Math.abs(w.balance)} duration={1.4} separator="." />
+                            </p>
+                            <p className="text-[10px] font-bold font-number-mono mt-0.5"
+                              style={{ color: '#94A3B8' }}>Rp</p>
+                          </div>
+
+                          {/* Pemasukan & Pengeluaran */}
+                          <div className="grid grid-cols-2 gap-3 pt-3"
+                            style={{ borderTop: '1px solid #F0EDE5' }}>
+                            <div>
+                              <div className="flex items-center gap-1 mb-1">
+                                <TrendUp size={11} className="text-[#2F9E6E]" weight="bold" />
+                                <span className="text-[10px] font-semibold text-slate-400">Masuk</span>
+                              </div>
+                              <p className="text-xs font-bold font-number-mono text-[#2F9E6E]">
+                                +{formatRupiah(w.income)}
+                              </p>
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-1 mb-1">
+                                <TrendDown size={11} className="text-[#D14343]" weight="bold" />
+                                <span className="text-[10px] font-semibold text-slate-400">Keluar</span>
+                              </div>
+                              <p className="text-xs font-bold font-number-mono text-[#D14343]">
+                                -{formatRupiah(w.expense)}
+                              </p>
+                            </div>
+                          </div>
+                        </SpotlightCard>
+                      )
+                    })}
+                  </StaggeredMenu>
+                </div>
+
+                {/* Total semua dompet */}
+                <AnimatedContent distance={20} duration={0.6} threshold={0.04}>
+                  <div className="rounded-2xl p-5"
+                    style={{ background: 'linear-gradient(135deg, #0F1E36 0%, #162848 60%, #1A2F54 100%)', border: '1px solid rgba(201,151,58,0.2)' }}>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-widest font-bold mb-0.5"
+                          style={{ color: 'rgba(201,151,58,0.8)' }}>Total Semua Dompet</p>
+                        <p className="font-serif-heading text-sm font-bold text-white">
+                          {walletBalances.length} dompet terdaftar
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-6 text-xs font-number-mono">
+                        <div>
+                          <span className="text-[10px] block mb-0.5" style={{ color: 'rgba(148,163,184,0.65)' }}>Total Masuk</span>
+                          <span className="font-bold" style={{ color: '#4ADE80' }}>
+                            +{formatRupiah(walletBalances.reduce((s, w) => s + w.income, 0))}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] block mb-0.5" style={{ color: 'rgba(148,163,184,0.65)' }}>Total Keluar</span>
+                          <span className="font-bold" style={{ color: '#F87171' }}>
+                            -{formatRupiah(walletBalances.reduce((s, w) => s + w.expense, 0))}
+                          </span>
+                        </div>
+                        <div className="pl-4" style={{ borderLeft: '1px solid rgba(255,255,255,0.12)' }}>
+                          <span className="text-[10px] block mb-0.5" style={{ color: 'rgba(148,163,184,0.65)' }}>Total Saldo</span>
+                          {(() => {
+                            const totalBal = walletBalances.reduce((s, w) => s + w.balance, 0)
+                            return (
+                              <span className="font-bold" style={{ color: totalBal >= 0 ? '#FFFFFF' : '#F87171' }}>
+                                {totalBal < 0 && '-'}{formatRupiah(totalBal)}
+                              </span>
+                            )
+                          })()}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </AnimatedContent>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ── TAB: BIASA ─────────────────────────────────────── */}
         {activeTab === 'regular' && (<>
 
         {/* INPUT FORM */}
         <AnimatedContent distance={28} duration={0.65} delay={0.06} threshold={0.05} className="print:hidden">
           <div className="stitched-card p-6 rounded-2xl">
-            <h2
-              className="font-serif-heading text-sm font-bold mb-4 flex items-center gap-2.5 pb-3"
-              style={{ color: '#1A1F2E', borderBottom: '1px solid #F0EDE5' }}
-            >
-              <div
-                className="w-7 h-7 rounded-lg flex items-center justify-center"
-                style={{ background: 'linear-gradient(135deg, #C8D8F0, #A8C0E5)', color: '#0F1E36' }}
-              >
+            <h2 className="font-serif-heading text-sm font-bold mb-4 flex items-center gap-2.5 pb-3"
+              style={{ color: '#1A1F2E', borderBottom: '1px solid #F0EDE5' }}>
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center"
+                style={{ background: 'linear-gradient(135deg, #C8D8F0, #A8C0E5)', color: '#0F1E36' }}>
                 <Plus size={14} weight="bold" />
               </div>
               <span>Tambah Transaksi Baru</span>
@@ -409,74 +552,41 @@ export default function TransactionsPage() {
             ) : (
               <form onSubmit={handleAdd} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                  <SelectInput
-                    label="Jenis Transaksi"
-                    value={type}
-                    onChange={setType}
+                  <SelectInput label="Jenis Transaksi" value={type} onChange={setType}
                     options={[
                       { value: 'expense', label: 'Pengeluaran (-)', sublabel: 'Uang keluar' },
                       { value: 'income',  label: 'Pemasukan (+)',   sublabel: 'Uang masuk'  },
-                    ]}
-                  />
-                  <SelectInput
-                    label="Dompet"
-                    required
-                    value={accountId}
-                    onChange={setAccountId}
+                    ]} />
+                  <SelectInput label="Dompet" required value={accountId} onChange={setAccountId}
                     placeholder="Pilih Dompet"
-                    options={accounts.map((a) => ({ value: a.id, label: a.name }))}
-                  />
-                  <SelectInput
-                    label="Kategori"
-                    required
-                    value={categoryId}
-                    onChange={setCategoryId}
+                    options={accounts.map((a) => ({ value: a.id, label: a.name }))} />
+                  <SelectInput label="Kategori" required value={categoryId} onChange={setCategoryId}
                     placeholder="Pilih Kategori"
-                    options={filteredCategories.map((c) => ({ value: c.id, label: c.name }))}
-                  />
+                    options={filteredCategories.map((c) => ({ value: c.id, label: c.name }))} />
                   <div>
                     <label className="form-label">Jumlah (Rp)</label>
-                    <input
-                      type="number"
-                      required
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      placeholder="50000"
-                      className="form-input font-number-mono"
-                    />
+                    <input type="number" required value={amount} onChange={(e) => setAmount(e.target.value)}
+                      placeholder="50000" className="form-input font-number-mono" />
                   </div>
                   <div>
                     <label className="form-label">Tanggal</label>
-                    <input
-                      type="date"
-                      required
-                      max={today}
-                      value={date}
-                      onChange={(e) => setDate(e.target.value)}
-                      className="form-input date-input-premium"
-                    />
+                    <input type="date" required max={today} value={date}
+                      onChange={(e) => setDate(e.target.value)} className="form-input date-input-premium" />
                     <p className="text-[11px] text-slate-400 mt-1">
                       Hanya tanggal hari ini dan sebelumnya yang diperbolehkan.
                     </p>
                   </div>
                   <div>
                     <label className="form-label">Catatan (opsional)</label>
-                    <input
-                      type="text"
-                      value={note}
-                      onChange={(e) => setNote(e.target.value)}
-                      placeholder="Contoh: Makan siang"
-                      className="form-input"
-                    />
+                    <input type="text" value={note} onChange={(e) => setNote(e.target.value)}
+                      placeholder="Contoh: Makan siang" className="form-input" />
                   </div>
                 </div>
-
                 {error && (
                   <p className="text-xs text-[#D14343] font-medium bg-red-50 p-2.5 rounded-lg border border-red-200 animate-fade-in">
                     {error}
                   </p>
                 )}
-
                 <div className="pt-1 flex justify-end">
                   <button type="submit" disabled={loading} className="btn-primary">
                     {loading ? 'Menyimpan...' : 'Simpan Transaksi'}
@@ -489,52 +599,34 @@ export default function TransactionsPage() {
 
         {/* FILTER BAR */}
         <FadeContent duration={500} delay={200} threshold={0.05} className="print:hidden">
-          <div
-            className="rounded-xl p-3 flex flex-col md:flex-row items-start md:items-center justify-between gap-3"
-            style={{ background: '#FFFFFF', border: '1px solid #E8E4DC', boxShadow: '0 1px 4px rgba(26,31,46,0.04)' }}
-          >
+          <div className="rounded-xl p-3 flex flex-col md:flex-row items-start md:items-center justify-between gap-3"
+            style={{ background: '#FFFFFF', border: '1px solid #E8E4DC', boxShadow: '0 1px 4px rgba(26,31,46,0.04)' }}>
             <div className="inline-flex p-1 rounded-lg" style={{ background: '#F5F2EB' }}>
               {(['month', 'week'] as const).map((mode) => (
-                <button
-                  key={mode}
-                  onClick={() => setViewMode(mode)}
+                <button key={mode} onClick={() => setViewMode(mode)}
                   className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${viewMode === mode ? 'bg-white shadow-sm' : 'hover:text-slate-900'}`}
-                  style={viewMode === mode ? { color: '#0F1E36', border: '1px solid #E8E4DC' } : { color: '#64748B' }}
-                >
+                  style={viewMode === mode ? { color: '#0F1E36', border: '1px solid #E8E4DC' } : { color: '#64748B' }}>
                   {mode === 'month' ? 'Bulanan' : 'Mingguan'}
                 </button>
               ))}
             </div>
-
             <div className="flex items-center gap-2">
               {viewMode === 'month' ? (
-                <input
-                  type="month"
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(e.target.value)}
-                  className="date-input-premium"
-                />
+                <input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)}
+                  className="date-input-premium" />
               ) : (
                 <div className="flex items-center gap-1.5">
-                  <button
-                    onClick={() => { const p = new Date(weekAnchor); p.setDate(p.getDate() - 7); setWeekAnchor(p) }}
-                    className="p-1.5 rounded-md border border-slate-300 bg-white text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-1"
-                  >
-                    <CaretLeft size={14} />
-                    <span>Sebelumnya</span>
+                  <button onClick={() => { const p = new Date(weekAnchor); p.setDate(p.getDate() - 7); setWeekAnchor(p) }}
+                    className="p-1.5 rounded-md border border-slate-300 bg-white text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-1">
+                    <CaretLeft size={14} /><span>Sebelumnya</span>
                   </button>
-                  <button
-                    onClick={() => setWeekAnchor(new Date())}
-                    className="px-2.5 py-1.5 rounded-md border border-slate-300 bg-white text-xs font-medium text-slate-700 hover:bg-slate-50"
-                  >
+                  <button onClick={() => setWeekAnchor(new Date())}
+                    className="px-2.5 py-1.5 rounded-md border border-slate-300 bg-white text-xs font-medium text-slate-700 hover:bg-slate-50">
                     Minggu Ini
                   </button>
-                  <button
-                    onClick={() => { const n = new Date(weekAnchor); n.setDate(n.getDate() + 7); setWeekAnchor(n) }}
-                    className="p-1.5 rounded-md border border-slate-300 bg-white text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-1"
-                  >
-                    <span>Selanjutnya</span>
-                    <CaretRight size={14} />
+                  <button onClick={() => { const n = new Date(weekAnchor); n.setDate(n.getDate() + 7); setWeekAnchor(n) }}
+                    className="p-1.5 rounded-md border border-slate-300 bg-white text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-1">
+                    <span>Selanjutnya</span><CaretRight size={14} />
                   </button>
                 </div>
               )}
@@ -544,19 +636,16 @@ export default function TransactionsPage() {
 
         {/* TRANSACTIONS LIST */}
         <AnimatedContent distance={24} duration={0.65} delay={0.1} threshold={0.05} className="print:hidden">
-          <div className="rounded-2xl overflow-hidden" style={{ background: '#FFFFFF', border: '1px solid #E8E4DC', boxShadow: '0 1px 4px rgba(26,31,46,0.04)' }}>
-            <div
-              className="px-5 py-3.5 flex items-center justify-between"
-              style={{ background: 'linear-gradient(to right, #FAFAF7, #F5F2EB)', borderBottom: '1px solid #EDE9E0' }}
-            >
+          <div className="rounded-2xl overflow-hidden"
+            style={{ background: '#FFFFFF', border: '1px solid #E8E4DC', boxShadow: '0 1px 4px rgba(26,31,46,0.04)' }}>
+            <div className="px-5 py-3.5 flex items-center justify-between"
+              style={{ background: 'linear-gradient(to right, #FAFAF7, #F5F2EB)', borderBottom: '1px solid #EDE9E0' }}>
               <h2 className="font-serif-heading font-bold text-sm" style={{ color: '#1A1F2E' }}>
                 Periode &mdash;{' '}
                 <span style={{ color: '#C9973A' }}>{periodLabel}</span>
               </h2>
-              <span
-                className="text-xs font-medium px-2.5 py-0.5 rounded-full"
-                style={{ background: '#FFFFFF', border: '1px solid #E8E4DC', color: '#64748B' }}
-              >
+              <span className="text-xs font-medium px-2.5 py-0.5 rounded-full"
+                style={{ background: '#FFFFFF', border: '1px solid #E8E4DC', color: '#64748B' }}>
                 {filteredTransactions.length} Transaksi
               </span>
             </div>
@@ -585,23 +674,13 @@ export default function TransactionsPage() {
                         {group.expense > 0 && <span className="badge-expense">-{formatRupiah(group.expense)}</span>}
                       </div>
                     </div>
-
                     <div className="space-y-1.5">
                       {group.items.map((t) => (
-                        <div
-                          key={t.id}
-                          className="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50/60 border border-slate-100 hover:border-slate-200 hover:bg-white transition-all duration-150"
-                        >
+                        <div key={t.id}
+                          className="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50/60 border border-slate-100 hover:border-slate-200 hover:bg-white transition-all duration-150">
                           <div className="flex items-center gap-3 min-w-0">
-                            <div
-                              className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-                                t.type === 'income' ? 'bg-emerald-100 text-[#2F9E6E]' : 'bg-red-100 text-[#D14343]'
-                              }`}
-                            >
-                              {t.type === 'income'
-                                ? <ArrowUpRight size={15} weight="bold" />
-                                : <ArrowDownRight size={15} weight="bold" />
-                              }
+                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${t.type === 'income' ? 'bg-emerald-100 text-[#2F9E6E]' : 'bg-red-100 text-[#D14343]'}`}>
+                              {t.type === 'income' ? <ArrowUpRight size={15} weight="bold" /> : <ArrowDownRight size={15} weight="bold" />}
                             </div>
                             <div className="min-w-0">
                               <p className="text-xs font-bold text-slate-900 truncate">
@@ -613,16 +692,12 @@ export default function TransactionsPage() {
                               </p>
                             </div>
                           </div>
-
                           <div className="flex items-center gap-3 shrink-0">
                             <span className={`text-xs font-bold font-number-mono ${t.type === 'income' ? 'text-[#2F9E6E]' : 'text-[#D14343]'}`}>
                               {t.type === 'income' ? '+' : '-'}&nbsp;{formatRupiah(t.amount)}
                             </span>
-                            <button
-                              onClick={() => handleDelete(t.id)}
-                              title="Hapus"
-                              className="text-slate-300 hover:text-red-500 p-1 rounded-lg hover:bg-red-50 transition-all"
-                            >
+                            <button onClick={() => handleDelete(t.id)} title="Hapus"
+                              className="text-slate-300 hover:text-red-500 p-1 rounded-lg hover:bg-red-50 transition-all">
                               <Trash size={13} />
                             </button>
                           </div>
@@ -633,13 +708,8 @@ export default function TransactionsPage() {
                 ))}
 
                 {/* Total footer */}
-                <div
-                  className="px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
-                  style={{
-                    background: 'linear-gradient(135deg, #0F1E36 0%, #162848 60%, #1A2F54 100%)',
-                    borderTop: '1px solid rgba(201,151,58,0.15)',
-                  }}
-                >
+                <div className="px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+                  style={{ background: 'linear-gradient(135deg, #0F1E36 0%, #162848 60%, #1A2F54 100%)', borderTop: '1px solid rgba(201,151,58,0.15)' }}>
                   <div>
                     <p className="text-[10px] uppercase tracking-widest font-bold" style={{ color: 'rgba(201,151,58,0.8)' }}>
                       Total Periode
