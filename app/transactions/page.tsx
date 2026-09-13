@@ -169,7 +169,7 @@ export default function TransactionsPage() {
     return Object.entries(map).sort(([a], [b]) => a.localeCompare(b))
   }, [filteredTransactions])
 
-  // Single-pass total (optimasi — dulu 2x filter+reduce)
+  // Single-pass total (optimasi - dulu 2x filter+reduce)
   const { totalIncome, totalExpense } = useMemo(() => {
     let inc = 0, exp = 0
     for (const t of filteredTransactions) {
@@ -179,7 +179,7 @@ export default function TransactionsPage() {
     return { totalIncome: inc, totalExpense: exp }
   }, [filteredTransactions])
 
-  // Saldo per dompet — dihitung dari SEMUA transaksi dalam satu pass
+  // Saldo per dompet - dihitung dari SEMUA transaksi dalam satu pass
   const walletBalances = useMemo((): WalletBalance[] => {
     const map: Record<string, {
       id: string; name: string; accType: string
