@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -8,7 +8,6 @@ import AnimatedContent from '@/components/reactbits/AnimatedContent'
 import FadeContent from '@/components/reactbits/FadeContent'
 import RecurringTab from '@/components/RecurringTab'
 import SpotlightCard from '@/components/reactbits/SpotlightCard'
-import StaggeredMenu from '@/components/reactbits/StaggeredMenu'
 import { motion } from 'motion/react'
 import CountUp from '@/components/reactbits/CountUp'
 import Link from 'next/link'
@@ -19,7 +18,7 @@ import {
   Wallet, Bank, CreditCard, Money, TrendUp, TrendDown,
 } from '@phosphor-icons/react'
 
-// ── Types ──────────────────────────────────────────────────────────────────
+// -- Types ------------------------------------------------------------------
 type Account  = { id: string; name: string; type: string }
 type Category = { id: string; name: string; type: string }
 type Transaction = {
@@ -51,7 +50,7 @@ type WalletBalance = {
   monthlyBreakdown: MonthlyBreakdown[]
 }
 
-// ── Constants (di luar komponen agar tidak re-create) ──────────────────────
+// -- Constants (di luar komponen agar tidak re-create) ----------------------
 const HARI  = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu']
 const BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
 
@@ -75,7 +74,7 @@ function getWeekRange(anchor: Date) {
 }
 function toDateStr(d: Date) { return d.toISOString().slice(0, 10) }
 
-// ── Icon helper dompet ─────────────────────────────────────────────────────
+// -- Icon helper dompet -----------------------------------------------------
 function WalletIcon({ type, size = 18 }: { type: string; size?: number }) {
   if (type === 'bank')     return <Bank     size={size} />
   if (type === 'e-wallet') return <CreditCard size={size} />
@@ -93,7 +92,7 @@ function walletTypeLabel(type: string) {
   return 'Tunai'
 }
 
-// ── Supabase client (module-level agar tidak re-instantiate per render) ────
+// -- Supabase client (module-level agar tidak re-instantiate per render) ----
 const supabase = createClient()
 
 export default function TransactionsPage() {
@@ -170,7 +169,7 @@ export default function TransactionsPage() {
     return Object.entries(map).sort(([a], [b]) => a.localeCompare(b))
   }, [filteredTransactions])
 
-  // Single-pass total (optimasi — dulu 2x filter+reduce)
+  // Single-pass total (optimasi � dulu 2x filter+reduce)
   const { totalIncome, totalExpense } = useMemo(() => {
     let inc = 0, exp = 0
     for (const t of filteredTransactions) {
@@ -180,7 +179,7 @@ export default function TransactionsPage() {
     return { totalIncome: inc, totalExpense: exp }
   }, [filteredTransactions])
 
-  // Saldo per dompet — dihitung dari SEMUA transaksi dalam satu pass
+  // Saldo per dompet � dihitung dari SEMUA transaksi dalam satu pass
   const walletBalances = useMemo((): WalletBalance[] => {
     const map: Record<string, {
       id: string; name: string; accType: string
@@ -418,10 +417,10 @@ export default function TransactionsPage() {
           </button>
         </div>
 
-        {/* ── TAB: BERULANG ─────────────────────────────────── */}
+        {/* -- TAB: BERULANG ----------------------------------- */}
         {activeTab === 'recurring' && <RecurringTab />}
 
-        {/* ── TAB: SALDO DOMPET ─────────────────────────────── */}
+        {/* -- TAB: SALDO DOMPET ------------------------------- */}
         {activeTab === 'wallets' && (
           <div className="space-y-5">
 
@@ -452,7 +451,7 @@ export default function TransactionsPage() {
               return (
                 <div className="flex flex-col lg:flex-row gap-5 items-start">
 
-                  {/* ── KIRI + TENGAH: Grid kartu dompet 2 kolom ── */}
+                  {/* -- KIRI + TENGAH: Grid kartu dompet 2 kolom -- */}
                   <div className="flex-1 min-w-0">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {walletBalances.map((w, idx) => {
@@ -607,7 +606,7 @@ export default function TransactionsPage() {
                     </div>
                   </div>
 
-                  {/* ── KANAN: Panel Insight ── */}
+                  {/* -- KANAN: Panel Insight -- */}
                   <AnimatedContent distance={24} duration={0.65} delay={0.15} threshold={0.04}>
                     <div className="w-full lg:w-72 xl:w-80 shrink-0 space-y-4">
 
@@ -712,7 +711,7 @@ export default function TransactionsPage() {
           </div>
         )}
 
-        {/* ── TAB: BIASA ─────────────────────────────────────── */}
+        {/* -- TAB: BIASA --------------------------------------- */}
         {activeTab === 'regular' && (<>
 
         {/* INPUT FORM */}
