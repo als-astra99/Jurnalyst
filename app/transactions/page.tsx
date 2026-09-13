@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -9,6 +9,7 @@ import FadeContent from '@/components/reactbits/FadeContent'
 import RecurringTab from '@/components/RecurringTab'
 import SpotlightCard from '@/components/reactbits/SpotlightCard'
 import StaggeredMenu from '@/components/reactbits/StaggeredMenu'
+import { motion } from 'motion/react'
 import CountUp from '@/components/reactbits/CountUp'
 import Link from 'next/link'
 import {
@@ -451,11 +452,10 @@ export default function TransactionsPage() {
               return (
                 <div className="flex flex-col lg:flex-row gap-5 items-start">
 
-                  {/* ── KIRI: Grid kartu dompet ── */}
+                  {/* ── KIRI + TENGAH: Grid kartu dompet 2 kolom ── */}
                   <div className="flex-1 min-w-0">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <StaggeredMenu staggerDelay={0.07} initialDelay={0.05}>
-                        {walletBalances.map((w) => {
+                        {walletBalances.map((w, idx) => {
                           const { bg, color } = walletTypeBg(w.accType)
                           const isPos         = w.balance >= 0
                           const isExpanded    = expandedWallet === w.id
@@ -465,7 +465,13 @@ export default function TransactionsPage() {
                           const isBusiest     = busiest?.id === w.id && w.transactionCount > 0
 
                           return (
-                            <SpotlightCard
+                        <motion.div
+                          key={w.id}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.4, delay: idx * 0.07, ease: 'easeOut' }}
+                        >
+                        <SpotlightCard
                               key={w.id}
                               spotlightColor={isPos ? 'rgba(47, 158, 110, 0.1)' : 'rgba(209, 67, 67, 0.08)'}
                               className="stitched-card rounded-2xl overflow-hidden"
@@ -595,9 +601,9 @@ export default function TransactionsPage() {
                                 )}
                               </div>
                             </SpotlightCard>
+                        </motion.div>
                           )
                         })}
-                      </StaggeredMenu>
                     </div>
                   </div>
 
