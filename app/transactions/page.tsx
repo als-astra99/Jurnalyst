@@ -14,7 +14,7 @@ import Link from 'next/link'
 import {
   Printer, FileXls, FileDoc, Plus, Trash, Receipt,
   CalendarBlank, ArrowUpRight, ArrowDownRight,
-  CaretLeft, CaretRight, Warning, RepeatOnce, ListBullets,
+  CaretLeft, CaretRight, CaretDown, Warning, RepeatOnce, ListBullets,
   Wallet, Bank, CreditCard, Money, TrendUp, TrendDown,
 } from '@phosphor-icons/react'
 
@@ -31,13 +31,22 @@ type Transaction = {
   categories: { name: string } | null
 }
 
+type MonthlyBreakdown = {
+  ym:      string   // '2026-09'
+  label:   string   // 'September 2026'
+  income:  number
+  expense: number
+  net:     number
+}
+
 type WalletBalance = {
-  id:       string
-  name:     string
-  accType:  string
-  income:   number
-  expense:  number
-  balance:  number
+  id:               string
+  name:             string
+  accType:          string
+  income:           number
+  expense:          number
+  balance:          number
+  monthlyBreakdown: MonthlyBreakdown[]
 }
 
 // ── Constants (di luar komponen agar tidak re-create) ──────────────────────
@@ -91,6 +100,7 @@ export default function TransactionsPage() {
   const [allTransactions, setAllTransactions] = useState<Transaction[]>([])
 
   const [activeTab, setActiveTab] = useState<'regular' | 'recurring' | 'wallets'>('regular')
+  const [expandedWallet, setExpandedWallet] = useState<string | null>(null)
 
   const [accountId,  setAccountId]  = useState('')
   const [categoryId, setCategoryId] = useState('')
@@ -168,32 +178,54 @@ export default function TransactionsPage() {
     return { totalIncome: inc, totalExpense: exp }
   }, [filteredTransactions])
 
-  // Saldo per dompet — dihitung dari SEMUA transaksi, tanpa request DB baru
+  // Saldo per dompet — dihitung dari SEMUA transaksi dalam satu pass
   const walletBalances = useMemo((): WalletBalance[] => {
-    const map: Record<string, WalletBalance> = {}
-    // Inisialisasi dari accounts (untuk dompet yang belum punya transaksi pun muncul)
+    // Map dompet: id -> { totals + monthlyMap }
+    const map: Record<string, {
+      id: string; name: string; accType: string
+      income: number; expense: number
+      monthlyMap: Record<string, { income: number; expense: number }>
+    }> = {}
+
+    // Inisialisasi dari accounts
     for (const acc of accounts) {
-      map[acc.id] = { id: acc.id, name: acc.name, accType: acc.type, income: 0, expense: 0, balance: 0 }
+      map[acc.id] = { id: acc.id, name: acc.name, accType: acc.type, income: 0, expense: 0, monthlyMap: {} }
     }
-    // Akumulasi dari transaksi
+
+    // Satu pass akumulasi total + per bulan
     for (const t of allTransactions) {
-      // Cari account berdasarkan nama (karena transaksi hanya simpan nama, bukan id)
       const acc = accounts.find((a) => a.name === t.accounts?.name)
       const key = acc?.id || t.accounts?.name || 'unknown'
       if (!map[key]) {
-        map[key] = {
-          id:      key,
-          name:    t.accounts?.name || 'Tanpa Dompet',
-          accType: acc?.type || 'cash',
-          income:  0,
-          expense: 0,
-          balance: 0,
-        }
+        map[key] = { id: key, name: t.accounts?.name || 'Tanpa Dompet', accType: acc?.type || 'cash', income: 0, expense: 0, monthlyMap: {} }
       }
-      if (t.type === 'income') map[key].income  += Number(t.amount)
-      else                     map[key].expense += Number(t.amount)
+      const ym  = t.transaction_date.slice(0, 7)
+      const amt = Number(t.amount)
+      if (!map[key].monthlyMap[ym]) map[key].monthlyMap[ym] = { income: 0, expense: 0 }
+      if (t.type === 'income') { map[key].income += amt; map[key].monthlyMap[ym].income += amt }
+      else                     { map[key].expense += amt; map[key].monthlyMap[ym].expense += amt }
     }
-    return Object.values(map).map((w) => ({ ...w, balance: w.income - w.expense }))
+
+    return Object.values(map).map((w) => ({
+      id:      w.id,
+      name:    w.name,
+      accType: w.accType,
+      income:  w.income,
+      expense: w.expense,
+      balance: w.income - w.expense,
+      monthlyBreakdown: Object.entries(w.monthlyMap)
+        .sort(([a], [b]) => b.localeCompare(a)) // terbaru dulu
+        .map(([ym, v]) => {
+          const [yr, m] = ym.split('-')
+          return {
+            ym,
+            label:   `${BULAN[parseInt(m) - 1]} ${yr}`,
+            income:  v.income,
+            expense: v.expense,
+            net:     v.income - v.expense,
+          }
+        }),
+    }))
   }, [accounts, allTransactions])
 
   // Rekap helpers untuk export
@@ -391,7 +423,7 @@ export default function TransactionsPage() {
 
         {/* ── TAB: SALDO DOMPET ─────────────────────────────── */}
         {activeTab === 'wallets' && (
-          <div className="space-y-4">
+          <div className="space-y-5">
 
             {walletBalances.length === 0 ? (
               <AnimatedContent distance={24} duration={0.6} threshold={0.04}>
@@ -410,69 +442,155 @@ export default function TransactionsPage() {
               </AnimatedContent>
             ) : (
               <>
-                {/* Kartu per dompet */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Grid kartu dompet */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                   <StaggeredMenu staggerDelay={0.07} initialDelay={0.05}>
                     {walletBalances.map((w) => {
                       const { bg, color } = walletTypeBg(w.accType)
-                      const isPositive    = w.balance >= 0
+                      const isPos         = w.balance >= 0
+                      const isExpanded    = expandedWallet === w.id
+                      const maxNet        = w.monthlyBreakdown.length > 0
+                        ? Math.max(...w.monthlyBreakdown.map((m) => Math.abs(m.net)), 1)
+                        : 1
+
                       return (
                         <SpotlightCard
                           key={w.id}
-                          spotlightColor={isPositive ? 'rgba(47, 158, 110, 0.12)' : 'rgba(209, 67, 67, 0.1)'}
-                          className="stitched-card p-5 rounded-2xl"
+                          spotlightColor={isPos ? 'rgba(47, 158, 110, 0.1)' : 'rgba(209, 67, 67, 0.08)'}
+                          className="stitched-card rounded-2xl overflow-hidden"
                           style={{ background: '#FFFFFF' }}
                         >
-                          {/* Header kartu */}
-                          <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                          {/* ── Stripe warna atas ── */}
+                          <div className="h-1 w-full" style={{
+                            background: isPos
+                              ? 'linear-gradient(to right, #22A06B, #34D399)'
+                              : 'linear-gradient(to right, #E55347, #F87171)',
+                          }} />
+
+                          <div className="p-5">
+                            {/* Header: ikon + nama + tipe */}
+                            <div className="flex items-center gap-3 mb-4">
+                              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                                 style={{ background: bg, color }}>
-                                <WalletIcon type={w.accType} size={17} />
+                                <WalletIcon type={w.accType} size={18} />
                               </div>
-                              <div>
-                                <p className="font-bold text-sm text-slate-900 leading-tight">{w.name}</p>
-                                <span className="text-[10px] font-semibold uppercase tracking-wide"
+                              <div className="min-w-0 flex-1">
+                                <p className="font-serif-heading font-bold text-sm text-slate-900 truncate">{w.name}</p>
+                                <span className="inline-block text-[10px] font-bold uppercase tracking-widest mt-0.5"
                                   style={{ color: '#94A3B8' }}>
                                   {walletTypeLabel(w.accType)}
                                 </span>
                               </div>
                             </div>
-                          </div>
 
-                          {/* Saldo bersih — menonjol */}
-                          <div className="mb-4">
-                            <p className="text-[10px] font-bold uppercase tracking-wider mb-1"
-                              style={{ color: '#94A3B8' }}>Saldo Bersih</p>
-                            <p className={`font-serif-heading text-2xl font-bold font-number-mono leading-none ${isPositive ? 'text-[#1A7A54]' : 'text-[#D14343]'}`}>
-                              {!isPositive && '-'}
-                              <CountUp to={Math.abs(w.balance)} duration={1.4} separator="." />
-                            </p>
-                            <p className="text-[10px] font-bold font-number-mono mt-0.5"
-                              style={{ color: '#94A3B8' }}>Rp</p>
-                          </div>
+                            {/* Saldo bersih — menonjol */}
+                            <div className="mb-4 p-3 rounded-xl" style={{
+                              background: isPos
+                                ? 'linear-gradient(135deg, #F0FBF5, #E6F7EE)'
+                                : 'linear-gradient(135deg, #FEF2F2, #FEE2E2)',
+                            }}>
+                              <p className="text-[10px] font-bold uppercase tracking-widest mb-1"
+                                style={{ color: isPos ? '#2F9E6E' : '#D14343' }}>
+                                Saldo Bersih
+                              </p>
+                              <div className="flex items-baseline gap-1">
+                                <span className="text-[11px] font-bold font-number-mono"
+                                  style={{ color: isPos ? '#2F9E6E' : '#D14343' }}>
+                                  {!isPos && '-'}Rp
+                                </span>
+                                <span className={`font-serif-heading text-2xl font-bold font-number-mono leading-none ${isPos ? 'text-[#1A7A54]' : 'text-[#D14343]'}`}>
+                                  <CountUp to={Math.abs(w.balance)} duration={1.4} separator="." />
+                                </span>
+                              </div>
+                            </div>
 
-                          {/* Pemasukan & Pengeluaran */}
-                          <div className="grid grid-cols-2 gap-3 pt-3"
-                            style={{ borderTop: '1px solid #F0EDE5' }}>
-                            <div>
-                              <div className="flex items-center gap-1 mb-1">
-                                <TrendUp size={11} className="text-[#2F9E6E]" weight="bold" />
-                                <span className="text-[10px] font-semibold text-slate-400">Masuk</span>
+                            {/* Total masuk & keluar — dua kolom */}
+                            <div className="grid grid-cols-2 gap-2 mb-4">
+                              <div className="p-2.5 rounded-lg" style={{ background: '#F0FBF5' }}>
+                                <div className="flex items-center gap-1 mb-1">
+                                  <TrendUp size={10} weight="bold" className="text-[#2F9E6E]" />
+                                  <span className="text-[10px] font-semibold text-[#2F9E6E]">Masuk</span>
+                                </div>
+                                <p className="text-xs font-bold font-number-mono text-[#1A7A54]">
+                                  +{formatRupiah(w.income)}
+                                </p>
                               </div>
-                              <p className="text-xs font-bold font-number-mono text-[#2F9E6E]">
-                                +{formatRupiah(w.income)}
-                              </p>
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-1 mb-1">
-                                <TrendDown size={11} className="text-[#D14343]" weight="bold" />
-                                <span className="text-[10px] font-semibold text-slate-400">Keluar</span>
+                              <div className="p-2.5 rounded-lg" style={{ background: '#FEF2F2' }}>
+                                <div className="flex items-center gap-1 mb-1">
+                                  <TrendDown size={10} weight="bold" className="text-[#D14343]" />
+                                  <span className="text-[10px] font-semibold text-[#D14343]">Keluar</span>
+                                </div>
+                                <p className="text-xs font-bold font-number-mono text-[#D14343]">
+                                  -{formatRupiah(w.expense)}
+                                </p>
                               </div>
-                              <p className="text-xs font-bold font-number-mono text-[#D14343]">
-                                -{formatRupiah(w.expense)}
-                              </p>
                             </div>
+
+                            {/* Accordion toggle — Riwayat per Bulan */}
+                            {w.monthlyBreakdown.length > 0 && (
+                              <div>
+                                <button
+                                  onClick={() => setExpandedWallet(isExpanded ? null : w.id)}
+                                  className="w-full flex items-center justify-between py-2 px-0 text-xs font-semibold transition-colors"
+                                  style={{
+                                    borderTop: '1px solid #F0EDE5',
+                                    color: '#64748B',
+                                  }}
+                                  onMouseEnter={(e) => { e.currentTarget.style.color = '#1A1F2E' }}
+                                  onMouseLeave={(e) => { e.currentTarget.style.color = '#64748B' }}
+                                >
+                                  <span>Riwayat per Bulan</span>
+                                  <div style={{
+                                    transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                                    transition: 'transform 0.25s ease',
+                                  }}>
+                                    <CaretDown size={13} weight="bold" />
+                                  </div>
+                                </button>
+
+                                {/* FadeContent — breakdown per bulan */}
+                                {isExpanded && (
+                                  <FadeContent duration={250} delay={0} threshold={0.01}>
+                                    <div className="space-y-1.5 pt-2 pb-1">
+                                      {w.monthlyBreakdown.map((mb) => {
+                                        const barPct = Math.round((Math.abs(mb.net) / maxNet) * 100)
+                                        const netPos = mb.net >= 0
+                                        return (
+                                          <div key={mb.ym} className="rounded-lg p-2.5"
+                                            style={{ background: '#FAFAF7', border: '1px solid #F0EDE5' }}>
+                                            {/* Baris atas: label bulan + net */}
+                                            <div className="flex items-center justify-between mb-1.5">
+                                              <span className="text-[11px] font-bold text-slate-700">{mb.label}</span>
+                                              <span className={`text-[11px] font-bold font-number-mono ${netPos ? 'text-[#2F9E6E]' : 'text-[#D14343]'}`}>
+                                                {netPos ? '+' : '-'}{formatRupiah(mb.net)}
+                                              </span>
+                                            </div>
+                                            {/* Mini bar progress */}
+                                            <div className="h-1 w-full rounded-full mb-1.5" style={{ background: '#E8E4DC' }}>
+                                              <div
+                                                className="h-1 rounded-full transition-all duration-500"
+                                                style={{
+                                                  width: `${barPct}%`,
+                                                  background: netPos
+                                                    ? 'linear-gradient(to right, #22A06B, #34D399)'
+                                                    : 'linear-gradient(to right, #E55347, #F87171)',
+                                                }}
+                                              />
+                                            </div>
+                                            {/* Masuk & keluar bulan */}
+                                            <div className="flex gap-3 text-[10px] font-number-mono">
+                                              <span className="text-[#2F9E6E]">+{formatRupiah(mb.income)}</span>
+                                              <span style={{ color: '#D6D0C4' }}>/</span>
+                                              <span className="text-[#D14343]">-{formatRupiah(mb.expense)}</span>
+                                            </div>
+                                          </div>
+                                        )
+                                      })}
+                                    </div>
+                                  </FadeContent>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </SpotlightCard>
                       )
@@ -480,10 +598,12 @@ export default function TransactionsPage() {
                   </StaggeredMenu>
                 </div>
 
-                {/* Total semua dompet */}
+                {/* Total footer semua dompet */}
                 <AnimatedContent distance={20} duration={0.6} threshold={0.04}>
-                  <div className="rounded-2xl p-5"
-                    style={{ background: 'linear-gradient(135deg, #0F1E36 0%, #162848 60%, #1A2F54 100%)', border: '1px solid rgba(201,151,58,0.2)' }}>
+                  <div className="rounded-2xl p-5" style={{
+                    background: 'linear-gradient(135deg, #0F1E36 0%, #162848 60%, #1A2F54 100%)',
+                    border: '1px solid rgba(201,151,58,0.2)',
+                  }}>
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div>
                         <p className="text-[10px] uppercase tracking-widest font-bold mb-0.5"
@@ -492,31 +612,29 @@ export default function TransactionsPage() {
                           {walletBalances.length} dompet terdaftar
                         </p>
                       </div>
-                      <div className="flex items-center gap-6 text-xs font-number-mono">
-                        <div>
-                          <span className="text-[10px] block mb-0.5" style={{ color: 'rgba(148,163,184,0.65)' }}>Total Masuk</span>
-                          <span className="font-bold" style={{ color: '#4ADE80' }}>
-                            +{formatRupiah(walletBalances.reduce((s, w) => s + w.income, 0))}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-[10px] block mb-0.5" style={{ color: 'rgba(148,163,184,0.65)' }}>Total Keluar</span>
-                          <span className="font-bold" style={{ color: '#F87171' }}>
-                            -{formatRupiah(walletBalances.reduce((s, w) => s + w.expense, 0))}
-                          </span>
-                        </div>
-                        <div className="pl-4" style={{ borderLeft: '1px solid rgba(255,255,255,0.12)' }}>
-                          <span className="text-[10px] block mb-0.5" style={{ color: 'rgba(148,163,184,0.65)' }}>Total Saldo</span>
-                          {(() => {
-                            const totalBal = walletBalances.reduce((s, w) => s + w.balance, 0)
-                            return (
-                              <span className="font-bold" style={{ color: totalBal >= 0 ? '#FFFFFF' : '#F87171' }}>
-                                {totalBal < 0 && '-'}{formatRupiah(totalBal)}
+                      {(() => {
+                        const totIn  = walletBalances.reduce((s, w) => s + w.income,  0)
+                        const totOut = walletBalances.reduce((s, w) => s + w.expense, 0)
+                        const totBal = totIn - totOut
+                        return (
+                          <div className="flex items-center gap-6 text-xs font-number-mono">
+                            <div>
+                              <span className="text-[10px] block mb-0.5" style={{ color: 'rgba(148,163,184,0.65)' }}>Total Masuk</span>
+                              <span className="font-bold" style={{ color: '#4ADE80' }}>+{formatRupiah(totIn)}</span>
+                            </div>
+                            <div>
+                              <span className="text-[10px] block mb-0.5" style={{ color: 'rgba(148,163,184,0.65)' }}>Total Keluar</span>
+                              <span className="font-bold" style={{ color: '#F87171' }}>-{formatRupiah(totOut)}</span>
+                            </div>
+                            <div className="pl-4" style={{ borderLeft: '1px solid rgba(255,255,255,0.12)' }}>
+                              <span className="text-[10px] block mb-0.5" style={{ color: 'rgba(148,163,184,0.65)' }}>Total Saldo</span>
+                              <span className="font-bold text-sm" style={{ color: totBal >= 0 ? '#FFFFFF' : '#F87171' }}>
+                                {totBal < 0 && '-'}{formatRupiah(totBal)}
                               </span>
-                            )
-                          })()}
-                        </div>
-                      </div>
+                            </div>
+                          </div>
+                        )
+                      })()}
                     </div>
                   </div>
                 </AnimatedContent>
